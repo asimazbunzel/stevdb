@@ -1,0 +1,45 @@
+Admin:
+
+  # id of the grid of simulations. Options are `mesastar` and `mesabinary`
+  id: "mesabinary"
+
+  # whether to re-analyze a stellar evolution and replace it in the database or not
+  replace_evolutions: False
+
+  # database options
+  database_name: "/home/asimazbunzel/Projects/HMXB-NSBH/data/mesa-xrb.db"
+  overwrite_database: True
+
+  mesabinary:
+
+    # flag to control if summarizing star + star evolution or not
+    do_star_plus_star_search: False
+
+    # same as before but for star + point mass case
+    do_star_plus_point_mass_search: False
+
+MESA:
+
+  # template location
+  template_directory: "/home/asimazbunzel/Projects/HMXB-NSBH/data/raw/templates"
+
+  # run location
+  runs_directory: "/home/asimazbunzel/Projects/HMXB-NSBH/data/raw/runs/"
+
+  # explore kicks
+  explore_kicks: False
+  natal_kicks_fname: ""
+
+  # name of files and folders important for MESA
+  primary_star_plus_star_folder_name: "LOGS1"
+  secondary_star_plus_star_folder_name: "LOGS2"
+  binary_star_plus_star_folder_name: "LOGS_binary"
+  primary_star_plus_point_mass_folder_name: "LOGS1"
+  binary_star_plus_point_mass_folder_name: "LOGS_binary"
+  primary_star_plus_star_name: "primary_history.data"
+  secondary_star_plus_star_name: "secondary_history.data"
+  binary_star_plus_star_name: "binary_history.data"
+  primary_star_plus_point_mass_name: "history.data"
+  binary_star_plus_point_mass_name: "binary_history.data"
+  star_at_core_collapse_name: "star_at_core_collapse.data"
+  binary_at_core_collapse_name: "binary_at_core_collapse.data"
