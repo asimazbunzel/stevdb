@@ -64,16 +64,20 @@ def start():
         print(core.config)
         sys.exit(0)
 
+    # useful shortcuts
+    admin_dict = core.config.get("Admin")
+    mesa_dict = core.config.get("MESA")
+
     # set up the grid manager
-    config_dict = core.config.get("Admin")
-    if core.config.get("Admin")["id"] == "mesabinary":
+    if mesa_dict.get("id") == "mesabinary":
         global gridManager
         gridManager = MESAbinaryGrid(
-                replace_evolutions=config_dict.get("replace_evolutions"),
-                database_name=config_dict.get("database_name"),
-                overwrite_database=config_dict.get("overwrite_database"),
-                mesa_binary_dict=config_dict.get("mesabinary"),
-                mesa_config_dict=core.config.get("MESA"),
+                replace_evolutions=admin_dict.get("replace_evolutions"),
+                database_name=admin_dict.get("database_name"),
+                overwrite_database=admin_dict.get("overwrite_database"),
+                template_directory=mesa_dict.get("template_directory"),
+                runs_directory=mesa_dict.get("runs_directory"),
+                mesa_binary_dict=mesa_dict.get("mesabinary"),
         )
     elif core.config.get("Admin")["id"] == "mesastar":
         logger.error("`mesastar` grid is not ready to be used")
