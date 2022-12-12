@@ -37,6 +37,9 @@ MESA:
     history_name_star1: "history.data"
     history_name_star2: ""
 
+    termination_directory: "termination_codes"
+    termination_name: "termination_star_plus_star"
+
   mesastar:
 
     skip_summary: True

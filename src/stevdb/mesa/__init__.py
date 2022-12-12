@@ -83,6 +83,7 @@ class MESArun(object):
                 fname_binary = Path(self.run_directory) / Path(run_name) / Path(log_directory_binary) / Path(history_name_binary)
             except TypeError:
                 return
+
         if self.should_have_mesastar1:
             log_directory_star1 = kwargs.get("log_directory_star1")
             history_name_star1 = kwargs.get("history_name_star1")
@@ -90,6 +91,7 @@ class MESArun(object):
                 fname_star1 = Path(self.run_directory) / Path(run_name) / Path(log_directory_star1) / Path(history_name_star1)
             except TypeError:
                 return
+
         if self.should_have_mesastar2:
             log_directory_star2 = kwargs.get("log_directory_star2")
             history_name_star2 = kwargs.get("history_name_star2")
@@ -98,17 +100,24 @@ class MESArun(object):
             except TypeError:
                 return
 
+        termination_directory = kwargs.get("termination_directory")
+        termination_name = kwargs.get("termination_name")
+        try:
+            termination_fname = Path(self.run_directory) / Path(run_name) / Path(termination_directory) / Path(termination_name)
+        except TypeError:
+            return
+
         self._MESAbinaryHistory = None
         self._MESAstar1History = None
         self._MESAstar2History = None
 
         # load MESAbinary stuff
         if self.should_have_mesabinary:
-            self._MESAbinaryHistory = MESAbinary(history_name=str(fname_binary))
+            self._MESAbinaryHistory = MESAbinary(history_name=str(fname_binary), termination_name=str(termination_fname))
         if self.should_have_mesastar1:
-            self._MESAstar1History = MESAstar(history_name=str(fname_star1))
+            self._MESAstar1History = MESAstar(history_name=str(fname_star1), termination_name=str(termination_fname))
         if self.should_have_mesastar2:
-            self._MESAstar2History = MESAstar(history_name=str(fname_star2))
+            self._MESAstar2History = MESAstar(history_name=str(fname_star2), termination_name=str(termination_fname))
 
         if self._MESAbinaryHistory is not None:
             self.have_mesabinary = True
@@ -130,3 +139,18 @@ class MESArun(object):
 
         if self.have_mesastar2:
             self.initial_conditions["star2"] = self._MESAstar2History.initial_conditions()
+
+    def get_termination_code(self) -> None:
+        """Load final code of simulation"""
+
+        self.termination_code = dict()
+
+        if self.have_mesabinary:
+            self.termination_code["termination_code"] = self._MESAbinaryHistory.termination_condition()
+
+        elif self.have_mesastar1:
+            self.termination_code["termination_code"] = self._MESAstar1History.termination_condition()
+
+        else:
+            logger.error("termination code should be obtained from mesabinary or mesastar1 cases")
+            sys.exit(1)

@@ -123,4 +123,6 @@ class MESAbinaryGrid(object):
             # initial conditions of binary system
             self.MESAsummary.get_initial_conditions()
 
+            self.MESAsummary.get_termination_code()
+
             sys.exit(0)

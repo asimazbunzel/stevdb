@@ -6,17 +6,25 @@ from typing import Union
 from ..io.logger import logger
 from .utils import MESAdata, P_to_a
 
+codesMap = {
+        "ce merge": "CE merge",
+        "max_model_number": "numerical issue (max model number)",
+        "min_timestep_limit": "numerical issue (small timestep)",
+        "white-dwarf": "WD/NS",
+}
+
 class MESAstar(object):
     """Class to handle MESAstar output
 
     Naming convention follows MESA defaults
     """
 
-    def __init__(self, history_name: Union[str, Path] = "") -> None:
+    def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "") -> None:
 
         logger.debug("load MESAstar output")
 
         self.history_name = history_name
+        self.termination_name = termination_name
 
         try:
             self.History = MESAdata(fname=self.history_name, compress=False)
@@ -35,6 +43,25 @@ class MESAstar(object):
 
         return initial_conditions
 
+    def termination_condition(self) -> str:
+        """Find out how the simulation ended"""
+
+        logger.debug("searching for termination condition")
+
+        if not Path(self.termination_name).is_file():
+            code = None
+        else:
+            with open(self.termination_name, "r") as f:
+                code = f.readline().strip("\n")
+
+        if code is None:
+            code = "None"
+
+        if code in codesMap:
+            code = codesMap[code]
+
+        return code
+
 
 class MESAbinary(object):
     """Class to handle MESAbinary output
@@ -42,11 +69,12 @@ class MESAbinary(object):
     Naming convention follows MESA defaults
     """
 
-    def __init__(self, history_name: Union[str, Path] = "") -> None:
+    def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "") -> None:
 
         logger.debug("load MESAbinary output")
 
         self.history_name = history_name
+        self.termination_name = termination_name
 
         try:
             self.History = MESAdata(fname=self.history_name, compress=False)
@@ -82,3 +110,22 @@ class MESAbinary(object):
         initial_conditions["initial_separation_in_Rsuns"] = P_to_a(period=initial_conditions["initial_period_in_days"], m1=initial_conditions["m1"], m2=initial_conditions["m2"])
 
         return initial_conditions
+
+    def termination_condition(self) -> str:
+        """Find out how the simulation ended"""
+
+        logger.debug("searching for termination condition")
+
+        if not Path(self.termination_name).is_file():
+            code = None
+        else:
+            with open(self.termination_name, "r") as f:
+                code = f.readline().strip("\n")
+
+        if code is None:
+            code = "None"
+
+        if code in codesMap:
+            code = codesMap[code]
+
+        return code
