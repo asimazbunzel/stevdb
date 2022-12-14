@@ -2,20 +2,26 @@
 Module that manages a set of MESAbinary simulations
 """
 
-from collections import OrderedDict
 import glob
-import os
-from pathlib import Path, PosixPath
+
+# import os
 import re
-import sqlite3
+
+# import sqlite3
 import sys
+
+# from collections import OrderedDict
+from pathlib import Path
+
+# from pathlib import PosixPath
 from typing import Union
 
-import numpy as np
-
-from .io.logger import LOG_FILENAME, logger
 from .io.io import progress_bar
+from .io.logger import logger
 from .mesa import MESArun
+
+# import numpy as np
+
 
 class MESAbinaryGrid(object):
     """Class responsible of managing a set of MESAbinary simulations
@@ -41,7 +47,15 @@ class MESAbinaryGrid(object):
         TBD
     """
 
-    def __init__(self, replace_evolutions: bool = False, database_name: str = "", overwrite_database: bool = True, template_directory: Union[str, Path] = "", runs_directory: Union[str, Path] = "", mesa_binary_dict: dict = {}) -> None:
+    def __init__(
+        self,
+        replace_evolutions: bool = False,
+        database_name: str = "",
+        overwrite_database: bool = True,
+        template_directory: Union[str, Path] = "",
+        runs_directory: Union[str, Path] = "",
+        mesa_binary_dict: dict = {},
+    ) -> None:
 
         self.replace_evolutions = replace_evolutions
 
@@ -66,7 +80,7 @@ class MESAbinaryGrid(object):
         """
 
         if not Path(self.runs_directory).exists():
-            logger.critical(f"no such folder found: `{runs_directory}`")
+            logger.critical(f"no such folder found: `{self.runs_directory}`")
             sys.exit(1)
 
         # first, count items inside path
@@ -80,16 +94,12 @@ class MESAbinaryGrid(object):
         runs_list = []
         if len(matches) > 0:
             n = 1
-            logger.debug(
-                f"only one (n = {n}) stellar evolution model found in `{self.runs_directory}`"
-            )
+            logger.debug(f"only one (n = {n}) stellar evolution model found in `{self.runs_directory}`")
 
             runs_list.append(self.runs_directory)
         else:
             n = len(folder_items)
-            logger.debug(
-                f"n = {n} stellar evolution models found in `{self.runs_directory}`"
-            )
+            logger.debug(f"n = {n} stellar evolution models found in `{self.runs_directory}`")
 
             for item in folder_items:
                 runs_list.append(item)
@@ -101,9 +111,7 @@ class MESAbinaryGrid(object):
 
         for k, run in enumerate(self.runs):
             right_msg = f" {k+1}/{len(self.runs)} done"
-            progress_bar(
-                k, len(self.runs), left_msg="creating summary", right_msg=right_msg
-            )
+            progress_bar(k, len(self.runs), left_msg="creating summary", right_msg=right_msg)
 
             logger.debug(f"inspecting folder: `{run.split('/')[-2]}`")
 
@@ -124,5 +132,7 @@ class MESAbinaryGrid(object):
             self.MESAsummary.get_initial_conditions()
 
             self.MESAsummary.get_termination_code()
+
+            self.MESAsummary.get_xrb_phase()
 
             sys.exit(0)
