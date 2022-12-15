@@ -4,14 +4,16 @@ from pathlib import Path
 from typing import Union
 
 from ..io.logger import logger
-from .utils import MESAdata, P_to_a
+from .utils import MESAdata
+from .utils import P_to_a
 
 codesMap = {
-        "ce merge": "CE merge",
-        "max_model_number": "numerical issue (max model number)",
-        "min_timestep_limit": "numerical issue (small timestep)",
-        "white-dwarf": "WD/NS",
+    "ce merge": "CE merge",
+    "max_model_number": "numerical issue (max model number)",
+    "min_timestep_limit": "numerical issue (small timestep)",
+    "white-dwarf": "WD/NS",
 }
+
 
 class MESAstar(object):
     """Class to handle MESAstar output
@@ -107,7 +109,9 @@ class MESAbinary(object):
             initial_conditions["initial_eccentricity"] = self.History.get("eccentricity")
 
         # separation is computed using Kepler law
-        initial_conditions["initial_separation_in_Rsuns"] = P_to_a(period=initial_conditions["initial_period_in_days"], m1=initial_conditions["m1"], m2=initial_conditions["m2"])
+        initial_conditions["initial_separation_in_Rsuns"] = P_to_a(
+            period=initial_conditions["initial_period_in_days"], m1=initial_conditions["m1"], m2=initial_conditions["m2"]
+        )
 
         return initial_conditions
 
@@ -129,3 +133,30 @@ class MESAbinary(object):
             code = codesMap[code]
 
         return code
+
+    def _compute_relative_rlof(self, star_id: int = -1):
+        """Compute relative RLOF as: (R - RL) / RL"""
+
+        try:
+            ecc = self.History.get("eccentricitiy")
+        except KeyError:
+            raise KeyError("`eccentricity` not found")
+
+        if star_id == 1:
+            R = self.History.get("star_1_radius")
+            RL = self.History.get("rl_1")
+        elif star_id == 2:
+            R = self.History.get("star_2_radius")
+            RL = self.History.get("rl_2")
+
+        return (R - RL * (1 - ecc)) / (RL * (1 - ecc))
+
+    def xrb_phase(self) -> dict:
+        """Values during XRB phase"""
+
+        xrbPhase = dict()
+
+        try:
+            self._compute_relative_rlof(star_id=1)
+        except KeyError:
+            return xrbPhase
