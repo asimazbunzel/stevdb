@@ -1,8 +1,8 @@
 """Driver for the database of stellar models"""
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from .io.io import load_yaml
 from .io.logger import logger
@@ -22,9 +22,7 @@ class Manager(object):
         self.args = self.parse_args()
 
         if self.args.config_fname is None:
-            logger.critical(
-                f"`configuration file option cannot be empty (maybe in the future we'll have defaults)`"
-            )
+            logger.critical(f"`configuration file option cannot be empty (maybe in the future we'll have defaults)`")
             sys.exit(1)
 
         # always use pathlib
