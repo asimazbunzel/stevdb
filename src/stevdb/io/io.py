@@ -1,8 +1,8 @@
 """Input/output module"""
 
+import sys
 from pathlib import Path
 from typing import Union
-import sys
 
 import yaml
 
@@ -76,9 +76,5 @@ def progress_bar(
     unmarked_progress = unmarked_char * (mark_count - bar_filled)
     progress = marked_progress + unmarked_progress
 
-    sys.stdout.write(
-        "\r{:<21} |{}| {:>6}% {:21}".format(
-            msg_left, progress, percent_str, msg_right
-        )
-    )
+    sys.stdout.write("\r{:<21} |{}| {:>6}% {:21}".format(msg_left, progress, percent_str, msg_right))
     sys.stdout.flush()

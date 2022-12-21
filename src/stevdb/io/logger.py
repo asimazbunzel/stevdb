@@ -3,10 +3,9 @@
 import getpass
 import logging
 import logging.config
-from pathlib import Path
 import os
-import sys
 import tempfile
+from pathlib import Path
 
 __module_name__ = "stevdb"
 
@@ -17,28 +16,18 @@ if "HOME" in os.environ:
 else:
     _XDG_CACHE_HOME = ""
 # define log file
-if (
-    "XDG_CACHE_HOME" in os.environ
-    and os.path.isdir(os.environ["XDG_CACHE_HOME"])
-    and os.access(os.environ["XDG_CACHE_HOME"], os.W_OK)
-):
+if "XDG_CACHE_HOME" in os.environ and os.path.isdir(os.environ["XDG_CACHE_HOME"]) and os.access(os.environ["XDG_CACHE_HOME"], os.W_OK):
     p = Path(os.path.join(os.environ["XDG_CACHE_HOME"], __module_name__))
     if not p.is_dir():
         p.mkdir(parents=True)
-    LOG_FILENAME = os.path.join(
-        os.environ["XDG_CACHE_HOME"], __module_name__, f"{__module_name__}.log"
-    )
+    LOG_FILENAME = os.path.join(os.environ["XDG_CACHE_HOME"], __module_name__, f"{__module_name__}.log")
 elif os.path.isdir(_XDG_CACHE_HOME) and os.access(_XDG_CACHE_HOME, os.W_OK):
     p = Path(os.path.join(_XDG_CACHE_HOME, __module_name__))
     if not p.is_dir():
         p.mkdir(parents=True)
-    LOG_FILENAME = os.path.join(
-        _XDG_CACHE_HOME, __module_name__, f"{__module_name__}.log"
-    )
+    LOG_FILENAME = os.path.join(_XDG_CACHE_HOME, __module_name__, f"{__module_name__}.log")
 else:
-    LOG_FILENAME = os.path.join(
-        tempfile.gettempdir(), f"{__module_name__}-{getpass.getuser()}.log"
-    )
+    LOG_FILENAME = os.path.join(tempfile.gettempdir(), f"{__module_name__}-{getpass.getuser()}.log")
 
 
 # config for logging module
@@ -49,9 +38,7 @@ LOGGING_CFG = {
     "formatters": {
         "standard": {"format": "%(asctime)s -- %(levelname)s -- %(message)s"},
         "short": {"format": "%(levelname)s -- %(message)s"},
-        "long": {
-            "format": "%(asctime)s -- %(levelname)s -- %(message)s (%(funcName)s in %(filename)s:%(lineno)s)"
-        },
+        "long": {"format": "%(asctime)s -- %(levelname)s -- %(message)s (%(funcName)s in %(filename)s:%(lineno)s)"},
         "free": {"format": "%(message)s"},
     },
     "handlers": {
@@ -66,8 +53,8 @@ LOGGING_CFG = {
         "console": {
             "level": "CRITICAL",
             "class": "logging.StreamHandler",
-            "formatter": "long",  # "free",
-        },
+            "formatter": "long",
+        },  # "free",
     },
     "loggers": {
         "debug": {"handlers": ["file", "console"], "level": "DEBUG"},
