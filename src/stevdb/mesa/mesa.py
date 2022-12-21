@@ -3,16 +3,13 @@
 from pathlib import Path
 from typing import Union
 
+import numpy as np
+
 from ..io.logger import logger
+from .mappings import map_termination_code
 from .utils import MESAdata
 from .utils import P_to_a
-
-codesMap = {
-    "ce merge": "CE merge",
-    "max_model_number": "numerical issue (max model number)",
-    "min_timestep_limit": "numerical issue (small timestep)",
-    "white-dwarf": "WD/NS",
-}
+from .utils import group_consecutives
 
 
 class MESAstar(object):
@@ -21,12 +18,13 @@ class MESAstar(object):
     Naming convention follows MESA defaults
     """
 
-    def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "") -> None:
+    def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "", mesa_dir: str = "") -> None:
 
         logger.debug("load MESAstar output")
 
         self.history_name = history_name
         self.termination_name = termination_name
+        self.mesa_dir = mesa_dir
 
         try:
             self.History = MESAdata(fname=self.history_name, compress=False)
@@ -59,8 +57,7 @@ class MESAstar(object):
         if code is None:
             code = "None"
 
-        if code in codesMap:
-            code = codesMap[code]
+        code = map_termination_code(mesa_dir=self.mesa_dir, termination_code=code)
 
         return code
 
@@ -71,12 +68,13 @@ class MESAbinary(object):
     Naming convention follows MESA defaults
     """
 
-    def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "") -> None:
+    def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "", mesa_dir: str = "") -> None:
 
         logger.debug("load MESAbinary output")
 
         self.history_name = history_name
         self.termination_name = termination_name
+        self.mesa_dir = mesa_dir
 
         try:
             self.History = MESAdata(fname=self.history_name, compress=False)
@@ -129,8 +127,7 @@ class MESAbinary(object):
         if code is None:
             code = "None"
 
-        if code in codesMap:
-            code = codesMap[code]
+        code = map_termination_code(mesa_dir=self.mesa_dir, termination_code=code)
 
         return code
 
@@ -157,6 +154,23 @@ class MESAbinary(object):
         xrbPhase = dict()
 
         try:
-            self._compute_relative_rlof(star_id=1)
+            rl_relative_overflow_1 = self._compute_relative_rlof(star_id=1)
         except KeyError:
             return xrbPhase
+
+        lg_mtransfer_rate = self.History.get("lg_mtransfer_rate")
+        model_number = self.History.get("model_number").astype(int)
+        model_number = np.arange(len(model_number))
+
+        # definition of XRB: X-ray luminosity above a threshold
+        lg_lxs = self._compute_xray_luminosity(model_number=model_number)
+        lx = np.power(10, lg_lxs[0]) + np.power(10, lg_lxs[1]) > self.LX_THRESHOLD
+
+        # if there are models fulfilling this condition, we have a XRB
+        if any(lx):
+
+            logger.debug("XRB phase(s) found")
+
+            model_number_as_xrb = group_consecutives(vals=self.History.get("model_number")[lx])
+
+        return xrbPhase

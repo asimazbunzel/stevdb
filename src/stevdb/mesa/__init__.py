@@ -1,12 +1,15 @@
 """Module driver to make a summary of a MESA simulation"""
 
+import os
+import sys
 from collections import OrderedDict
 from pathlib import Path
-import sys
 from typing import Union
 
 from ..io.logger import logger
-from .mesa import MESAbinary, MESAstar
+from .mesa import MESAbinary
+from .mesa import MESAstar
+
 
 class MESArun(object):
     """Object matching a single MESA run
@@ -59,7 +62,8 @@ class MESArun(object):
         self.have_mesastar2 = False
 
         # MESAbinary run, should have MESAbinary output
-        if self.is_binary_evolution: self.should_have_mesabinary = True
+        if self.is_binary_evolution:
+            self.should_have_mesabinary = True
 
         # flag to control the type of MESAbinary run
         if "evolve_both_stars" in kwargs.keys():
@@ -70,6 +74,14 @@ class MESArun(object):
             if self.is_binary_evolution:
                 logger.error("MESAbinary simulation require `evolve_both_stars` set in config file")
                 sys.exit(0)
+
+        # location of MESA_DIR instal
+        if "mesa_dir" in kwargs.keys():
+            mesa_dir = kwargs.get("mesa_dir")
+        else:
+            mesa_dir = os.environ.get("MESA_DIR")
+            if mesa_dir is None:
+                raise ValueError("need `mesa_dir` variable to make a summary of a simulation")
 
         logger.debug(f"MESAbinary flags (should_have, have): {self.should_have_mesabinary}, {self.have_mesabinary}")
         logger.debug(f"MESAstar1 flags (should_have, have): {self.should_have_mesastar1}, {self.have_mesastar1}")
@@ -113,11 +125,11 @@ class MESArun(object):
 
         # load MESAbinary stuff
         if self.should_have_mesabinary:
-            self._MESAbinaryHistory = MESAbinary(history_name=str(fname_binary), termination_name=str(termination_fname))
+            self._MESAbinaryHistory = MESAbinary(history_name=str(fname_binary), termination_name=str(termination_fname), mesa_dir=mesa_dir)
         if self.should_have_mesastar1:
-            self._MESAstar1History = MESAstar(history_name=str(fname_star1), termination_name=str(termination_fname))
+            self._MESAstar1History = MESAstar(history_name=str(fname_star1), termination_name=str(termination_fname), mesa_dir=mesa_dir)
         if self.should_have_mesastar2:
-            self._MESAstar2History = MESAstar(history_name=str(fname_star2), termination_name=str(termination_fname))
+            self._MESAstar2History = MESAstar(history_name=str(fname_star2), termination_name=str(termination_fname), mesa_dir=mesa_dir)
 
         if self._MESAbinaryHistory is not None:
             self.have_mesabinary = True
@@ -154,3 +166,10 @@ class MESArun(object):
         else:
             logger.error("termination code should be obtained from mesabinary or mesastar1 cases")
             sys.exit(1)
+
+    def get_xrb_phase(self) -> None:
+        """Load information during XRB phase(s)"""
+
+        self.xrb_phase = dict()
+
+        self.xrb_phase.update(self._MESAbinaryHistory.xrb_phase())
