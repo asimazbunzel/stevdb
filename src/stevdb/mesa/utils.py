@@ -1,12 +1,11 @@
 """Utility functions for MESA output"""
 
 import gzip
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from typing import Union
 
 import numpy as np
-
 
 one_third = 1e0 / 3e0
 standard_cgrav = 6.67428e-8  # gravitational constant (g^-1 cm^3 s^-2)
@@ -65,9 +64,7 @@ def a_to_P(separation, m1, m2):
     m1 = m1 * Msun
     m2 = m2 * Msun  # in g
 
-    period = np.power(
-        separation * separation * separation / (standard_cgrav * (m1 + m2)), 1e0 / 2e0
-    )
+    period = np.power(separation * separation * separation / (standard_cgrav * (m1 + m2)), 1e0 / 2e0)
     period *= 2 * np.pi
     return period / (24e0 * 3600e0)
 
@@ -148,17 +145,13 @@ class MESAdata(object):
 
         # Header names
         if is_gz:
-            header_names = [
-                name.decode("utf8") for name in file.readline().strip().split()
-            ]
+            header_names = [name.decode("utf8") for name in file.readline().strip().split()]
         else:
             header_names = file.readline().strip().split()
 
         # After that are header names values
         if is_gz:
-            header_values = [
-                val.decode("utf8") for val in file.readline().strip().split()
-            ]
+            header_values = [val.decode("utf8") for val in file.readline().strip().split()]
         else:
             header_values = [val for val in file.readline().strip().split()]
 
@@ -206,16 +199,14 @@ class MESAdata(object):
             model_number = self.data["model_number"]
             last_model = int(model_number[-1])
             mask = np.zeros(len(model_number))
-            for i in range(len(model_number) - 2, -1, -1):
+            for i in range(n - 2, -1, -1):
                 if int(model_number[i]) >= last_model:
                     mask[i] = 1
                 else:
                     last_model = int(model_number[i])
 
             for name in col_names:
-                self.data[name] = np.ma.masked_array(
-                    self.data[name], mask=mask
-                ).compressed()
+                self.data[name] = np.ma.masked_array(self.data[name], mask=mask).compressed()
 
         # try to compress if permitted
         if self.compress:
