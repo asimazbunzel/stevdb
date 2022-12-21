@@ -15,13 +15,13 @@ Why does this file exist, and why not put this in __main__?
   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
 """
 import os
-from pathlib import Path
 import platform
 import signal
 import sys
 
 from .base import Manager
-from .io.logger import LOG_FILENAME, logger
+from .io.logger import LOG_FILENAME
+from .io.logger import logger
 from .mesabinary_runs import MESAbinaryGrid
 
 
@@ -72,12 +72,12 @@ def start():
     if mesa_dict.get("id") == "mesabinary":
         global gridManager
         gridManager = MESAbinaryGrid(
-                replace_evolutions=admin_dict.get("replace_evolutions"),
-                database_name=admin_dict.get("database_name"),
-                overwrite_database=admin_dict.get("overwrite_database"),
-                template_directory=mesa_dict.get("template_directory"),
-                runs_directory=mesa_dict.get("runs_directory"),
-                mesa_binary_dict=mesa_dict.get("mesabinary"),
+            replace_evolutions=admin_dict.get("replace_evolutions"),
+            database_name=admin_dict.get("database_name"),
+            overwrite_database=admin_dict.get("overwrite_database"),
+            template_directory=mesa_dict.get("template_directory"),
+            runs_directory=mesa_dict.get("runs_directory"),
+            mesa_binary_dict=mesa_dict.get("mesabinary"),
         )
     elif core.config.get("Admin")["id"] == "mesastar":
         logger.error("`mesastar` grid is not ready to be used")
@@ -99,9 +99,7 @@ def main():
     curr_dir = os.getcwd()
 
     logger.info(f"current working directory is `{curr_dir}`")
-    logger.info(
-        f"{platform.python_implementation()} {platform.python_version()} detected"
-    )
+    logger.info(f"{platform.python_implementation()} {platform.python_version()} detected")
 
     # # load main driver
     global core
