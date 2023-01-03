@@ -24,6 +24,9 @@ MESA:
 
   mesabinary:
 
+    # $MESA_DIR value
+    mesa_dir: "/home/asimazbunzel/Developments/mesa-r15140"
+
     # whether MESAbinary evolves two stars or a star and a point-mass
     evolve_both_stars: False
 
