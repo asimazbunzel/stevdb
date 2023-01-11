@@ -94,12 +94,12 @@ class MESAbinaryGrid(object):
         runs_list = []
         if len(matches) > 0:
             n = 1
-            logger.debug(f"only one (n = {n}) stellar evolution model found in `{self.runs_directory}`")
+            logger.debug(f"only one ({n}) stellar evolution model found in `{self.runs_directory}`")
 
             runs_list.append(self.runs_directory)
         else:
             n = len(folder_items)
-            logger.debug(f"n = {n} stellar evolution models found in `{self.runs_directory}`")
+            logger.debug(f"{n} stellar evolution models found in `{self.runs_directory}`")
 
             for item in folder_items:
                 runs_list.append(item)

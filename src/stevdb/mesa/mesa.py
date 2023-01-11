@@ -20,7 +20,7 @@ class MESAstar(object):
 
     def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "", mesa_dir: str = "") -> None:
 
-        logger.debug("load MESAstar output")
+        logger.debug(" load MESAstar output")
 
         self.history_name = history_name
         self.termination_name = termination_name
@@ -34,6 +34,8 @@ class MESAstar(object):
     def initial_conditions(self) -> dict:
         """Search for initial conditions of MESAstar output"""
 
+        logger.debug(" searching for initial conditions in MESAstar")
+
         initial_conditions = dict()
 
         try:
@@ -46,7 +48,7 @@ class MESAstar(object):
     def termination_condition(self) -> str:
         """Find out how the simulation ended"""
 
-        logger.debug("searching for termination condition")
+        logger.debug(" searching for termination condition in MESAstar")
 
         if not Path(self.termination_name).is_file():
             code = None
@@ -70,7 +72,7 @@ class MESAbinary(object):
 
     def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "", mesa_dir: str = "") -> None:
 
-        logger.debug("load MESAbinary output")
+        logger.debug(" load MESAbinary output")
 
         self.history_name = history_name
         self.termination_name = termination_name
@@ -83,6 +85,8 @@ class MESAbinary(object):
 
     def initial_conditions(self) -> dict:
         """Search for initial conditions of MESAbinary output"""
+
+        logger.debug(" searching for initial conditions in MESAbinary")
 
         initial_conditions = dict()
 
@@ -116,7 +120,7 @@ class MESAbinary(object):
     def termination_condition(self) -> str:
         """Find out how the simulation ended"""
 
-        logger.debug("searching for termination condition")
+        logger.debug(" searching for termination condition in MESAbinary")
 
         if not Path(self.termination_name).is_file():
             code = None
@@ -169,7 +173,7 @@ class MESAbinary(object):
         # if there are models fulfilling this condition, we have a XRB
         if any(lx):
 
-            logger.debug("XRB phase(s) found")
+            logger.debug(" XRB phase(s) found")
 
             model_number_as_xrb = group_consecutives(vals=self.History.get("model_number")[lx])
 

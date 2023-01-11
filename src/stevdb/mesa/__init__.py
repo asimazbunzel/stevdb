@@ -34,7 +34,7 @@ class MESArun(object):
         **kwargs,
     ) -> None:
 
-        logger.info("loading MESArun")
+        logger.debug(" loading MESArun")
 
         # let folders be handled by pathlib module
         if isinstance(template_directory, str):
@@ -83,9 +83,9 @@ class MESArun(object):
             if mesa_dir is None:
                 raise ValueError("need `mesa_dir` variable to make a summary of a simulation")
 
-        logger.debug(f"MESAbinary flags (should_have, have): {self.should_have_mesabinary}, {self.have_mesabinary}")
-        logger.debug(f"MESAstar1 flags (should_have, have): {self.should_have_mesastar1}, {self.have_mesastar1}")
-        logger.debug(f"MESAstar2 flags (should_have, have): {self.should_have_mesastar2}, {self.have_mesastar2}")
+        logger.debug(f" MESAbinary flags (should_have, have): {self.should_have_mesabinary}, {self.have_mesabinary}")
+        logger.debug(f" MESAstar1 flags (should_have, have): {self.should_have_mesastar1}, {self.have_mesastar1}")
+        logger.debug(f" MESAstar2 flags (should_have, have): {self.should_have_mesastar2}, {self.have_mesastar2}")
 
         # depending on the type of run, load specific MESAstar/binary output
         if self.should_have_mesabinary:
