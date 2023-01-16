@@ -1,5 +1,7 @@
 """Module with class to load MESA output"""
 
+import gzip
+import subprocess
 from pathlib import Path
 from typing import Union
 
@@ -7,115 +9,183 @@ import numpy as np
 
 from ..io.logger import logger
 from .mappings import map_termination_code
-from .utils import MESAdata
-from .utils import P_to_a
-from .utils import group_consecutives
 
 
-class MESAstar(object):
-    """Class to handle MESAstar output
+class AttributeMapper(object):
+    """Map to access dictionary items as attributes
 
-    Naming convention follows MESA defaults
+    Idea from pandas DataFrame obj
     """
 
-    def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "", mesa_dir: str = "") -> None:
+    def __init__(self, obj) -> None:
+        self.__dict__["data"] = obj
 
-        logger.debug(" load MESAstar output")
-
-        self.history_name = history_name
-        self.termination_name = termination_name
-        self.mesa_dir = mesa_dir
-
-        try:
-            self.History = MESAdata(fname=self.history_name, compress=False)
-        except FileNotFoundError:
-            self.History = None
-
-    def initial_conditions(self) -> dict:
-        """Search for initial conditions of MESAstar output"""
-
-        logger.debug(" searching for initial conditions in MESAstar")
-
-        initial_conditions = dict()
-
-        try:
-            initial_conditions["initial_mass"] = self.History.get("star_mass")[0]
-        except Exception:
-            initial_conditions["initial_mass"] = self.History.get("star_mass")
-
-        return initial_conditions
-
-    def termination_condition(self) -> str:
-        """Find out how the simulation ended"""
-
-        logger.debug(" searching for termination condition in MESAstar")
-
-        if not Path(self.termination_name).is_file():
-            code = None
+    def __getattr__(self, attr):
+        if attr in self.data:
+            found_attr = self.data[attr]
+            if isinstance(found_attr, dict):
+                return AttributeMapper(found_attr)
+            else:
+                return found_attr
         else:
-            with open(self.termination_name, "r") as f:
-                code = f.readline().strip("\n")
+            raise AttributeError
 
-        if code is None:
-            code = "None"
+    def __setattr__(self, attr, value):
+        if attr in self.data:
+            self.data[attr] = value
+        else:
+            raise NotImplementedError
 
-        code = map_termination_code(mesa_dir=self.mesa_dir, termination_code=code)
+    def __dir__(self):
+        return self.data.keys()
 
-        return code
+
+class NoSingleValueFoundException(Exception):
+    pass
 
 
-class MESAbinary(object):
-    """Class to handle MESAbinary output
+class MESAdata(object):
+    """Class with the output a MESA simulation
 
-    Naming convention follows MESA defaults
+    Parameters
+    ----------
+    fname : `str`
+        Name of the file with the MESA output
+    compress : `bool`
+        Flag to check if we want to compress output after loading it
     """
 
-    def __init__(self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "", mesa_dir: str = "") -> None:
+    def __init__(
+        self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "", mesa_dir: str = "", compress: bool = False
+    ) -> None:
+        # check for fname, or fname.gz for compressed data
+        fname_tmp = Path(history_name)
+        if fname_tmp.is_file():
+            is_gz = False
 
-        logger.debug(" load MESAbinary output")
+        else:
+            # try with a gzip version of the same name
+            gz_fname = Path(f"{history_name}.gz")
+            if gz_fname.is_file() is False:
+                raise FileNotFoundError
+
+            else:
+                is_gz = True
 
         self.history_name = history_name
+        self.compress = compress
         self.termination_name = termination_name
         self.mesa_dir = mesa_dir
+        self.header = dict()
+        self.data = dict()
+
+        # flag to check if it is a history file or not, based on the name of the file
+        is_history = False
+        if "history" in self.history_name:
+            is_history = True
+
+        # try to open file
+        if is_gz:
+            file = gzip.open(gz_fname, "rb")
+        else:
+            file = open(self.history_name, "r")
+
+        # First line is not used
+        file.readline()
+
+        # Header names
+        if is_gz:
+            header_names = [name.decode("utf8") for name in file.readline().strip().split()]
+        else:
+            header_names = file.readline().strip().split()
+
+        # After that are header names values
+        if is_gz:
+            header_values = [val.decode("utf8") for val in file.readline().strip().split()]
+        else:
+            header_values = [val for val in file.readline().strip().split()]
+
+        for i, name in enumerate(header_names):
+            self.header[name] = header_values[i]
+
+        # After header there is a blank line followed by an unused line.
+        file.readline()
+        file.readline()
+
+        # Next are the column names
+        if is_gz:
+            tmp_col_names = file.readline().strip().split()
+            col_names = [name.decode("utf8") for name in tmp_col_names]
+
+        else:
+            col_names = file.readline().strip().split()
+
+        # close file
+        file.close()
+
+        # Arrays are loaded using numpy an treated them as np.arrays
+        file_data = np.loadtxt(self.history_name, skiprows=6, unpack=True)
+
+        # put arrays into dictionary
+        for i, name in enumerate(col_names):
+            self.data[name] = np.array(file_data[i])
 
         try:
-            self.History = MESAdata(fname=self.history_name, compress=False)
-        except FileNotFoundError:
-            self.History = None
+            n = len(self.data["model_number"])
+        except TypeError:
+            is_history = False
 
-    def initial_conditions(self) -> dict:
-        """Search for initial conditions of MESAbinary output"""
+        if is_history:
+            #  clean up log history
+            #  --------------------
+            #  the way it works is simple. It starts from the last model
+            #  number and checks if that number is not repeated in the
+            #  line before. This is combined with a mask so that it has
+            #  a 0 (= True) for the lines that are not repeated and a 1
+            #  (= False) for the repeated ones
+            #  after the mask is created, each array-type column is
+            #  filtered with this mask using some numpy methods
+            #  (numpy.ma.masked_array & compressed)
+            model_number = self.data["model_number"]
+            last_model = int(model_number[-1])
+            mask = np.zeros(len(model_number))
+            for i in range(n - 2, -1, -1):
+                if int(model_number[i]) >= last_model:
+                    mask[i] = 1
+                else:
+                    last_model = int(model_number[i])
 
-        logger.debug(" searching for initial conditions in MESAbinary")
+            for name in col_names:
+                self.data[name] = np.ma.masked_array(self.data[name], mask=mask).compressed()
 
-        initial_conditions = dict()
+        # try to compress if permitted
+        if self.compress:
+            try:
+                p = subprocess.Popen(
+                    "gzip {}".format(self.history_name),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    shell=True,
+                )
+                stdout, stderr = p.communicate()
+            except Exception:
+                pass
 
-        try:
-            initial_conditions["m1"] = self.History.get("star_1_mass")[0]
-        except Exception:
-            initial_conditions["m1"] = self.History.get("star_1_mass")
+    def get(self, arg):
+        """
+        Given a column name, it returns its values.
 
-        try:
-            initial_conditions["m2"] = self.History.get("star_2_mass")[0]
-        except Exception:
-            initial_conditions["m2"] = self.History.get("star_2_mass")
+        Parameters
+        -----------
+        arg: `str`
+            Column name
 
-        try:
-            initial_conditions["initial_period_in_days"] = self.History.get("period_days")[0]
-        except Exception:
-            initial_conditions["initial_period_in_days"] = self.History.get("period_days")
-
-        try:
-            initial_conditions["initial_eccentricity"] = self.History.get("eccentricity")[0]
-        except Exception:
-            initial_conditions["initial_eccentricity"] = self.History.get("eccentricity")
-
-        # separation is computed using Kepler law
-        initial_conditions["initial_separation_in_Rsuns"] = P_to_a(
-            period=initial_conditions["initial_period_in_days"], m1=initial_conditions["m1"], m2=initial_conditions["m2"]
-        )
-
-        return initial_conditions
+        Returns
+        -------
+        a: `list`
+            Array of elements corresponding to the column name given
+        """
+        return self.data[arg]
 
     def termination_condition(self) -> str:
         """Find out how the simulation ended"""
@@ -134,47 +204,3 @@ class MESAbinary(object):
         code = map_termination_code(mesa_dir=self.mesa_dir, termination_code=code)
 
         return code
-
-    def _compute_relative_rlof(self, star_id: int = -1):
-        """Compute relative RLOF as: (R - RL) / RL"""
-
-        try:
-            ecc = self.History.get("eccentricitiy")
-        except KeyError:
-            raise KeyError("`eccentricity` not found")
-
-        if star_id == 1:
-            R = self.History.get("star_1_radius")
-            RL = self.History.get("rl_1")
-        elif star_id == 2:
-            R = self.History.get("star_2_radius")
-            RL = self.History.get("rl_2")
-
-        return (R - RL * (1 - ecc)) / (RL * (1 - ecc))
-
-    def xrb_phase(self) -> dict:
-        """Values during XRB phase"""
-
-        xrbPhase = dict()
-
-        try:
-            rl_relative_overflow_1 = self._compute_relative_rlof(star_id=1)
-        except KeyError:
-            return xrbPhase
-
-        lg_mtransfer_rate = self.History.get("lg_mtransfer_rate")
-        model_number = self.History.get("model_number").astype(int)
-        model_number = np.arange(len(model_number))
-
-        # definition of XRB: X-ray luminosity above a threshold
-        lg_lxs = self._compute_xray_luminosity(model_number=model_number)
-        lx = np.power(10, lg_lxs[0]) + np.power(10, lg_lxs[1]) > self.LX_THRESHOLD
-
-        # if there are models fulfilling this condition, we have a XRB
-        if any(lx):
-
-            logger.debug(" XRB phase(s) found")
-
-            model_number_as_xrb = group_consecutives(vals=self.History.get("model_number")[lx])
-
-        return xrbPhase
