@@ -7,7 +7,7 @@ from typing import Union
 
 import numpy as np
 
-from ..io.logger import logger
+# from ..io.logger import logger
 from .mappings import map_termination_code
 
 
@@ -58,30 +58,39 @@ class MESAdata(object):
     def __init__(
         self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "", mesa_dir: str = "", compress: bool = False
     ) -> None:
+
+        # always use pathlib
+        if isinstance(history_name, str):
+            fname_tmp = Path(history_name)
+        else:
+            fname_tmp = history_name
+
         # check for fname, or fname.gz for compressed data
-        fname_tmp = Path(history_name)
         if fname_tmp.is_file():
             is_gz = False
-
         else:
             # try with a gzip version of the same name
             gz_fname = Path(f"{history_name}.gz")
             if gz_fname.is_file() is False:
                 raise FileNotFoundError
-
             else:
                 is_gz = True
 
         self.history_name = history_name
         self.compress = compress
-        self.termination_name = termination_name
+        # always use pathlib
+        if isinstance(termination_name, str):
+            self.termination_name = Path(termination_name)
+        else:
+            self.termination_name = termination_name
         self.mesa_dir = mesa_dir
         self.header = dict()
         self.data = dict()
+        self.termination_code = self.termination_condition()
 
         # flag to check if it is a history file or not, based on the name of the file
         is_history = False
-        if "history" in self.history_name:
+        if "history" in str(self.history_name):
             is_history = True
 
         # try to open file
@@ -190,9 +199,7 @@ class MESAdata(object):
     def termination_condition(self) -> str:
         """Find out how the simulation ended"""
 
-        logger.debug(" searching for termination condition in MESAbinary")
-
-        if not Path(self.termination_name).is_file():
+        if not self.termination_name.is_file():
             code = None
         else:
             with open(self.termination_name, "r") as f:
