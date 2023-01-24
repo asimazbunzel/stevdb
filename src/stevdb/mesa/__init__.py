@@ -215,3 +215,47 @@ class MESArun(object):
         logger.debug(f"   MESAbinary flags (have): {self.have_mesabinary}")
         logger.debug(f"   MESAstar1 flags (have): {self.have_mesastar1}")
         logger.debug(f"   MESAstar2 flags (have): {self.have_mesastar2}")
+
+    def get_initials(self, history_columns_dict: dict = {}) -> None:
+        """Get initial conditions of a MESA run
+
+        Parameters
+        ----------
+        history_columns_list : `dict`
+            Dictionary with the MESA column names to search for initial conditions
+        """
+
+        if "star" not in history_columns_dict and "binary" not in history_columns_dict:
+            logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
+            sys.exit(1)
+
+        initials = dict()
+
+        # search for star conditions
+        if "star" in history_columns_dict:
+            if self.have_mesastar1:
+                initials["star1"] = dict()
+                for name in history_columns_dict.get("star"):
+                    try:
+                        initials["star1"][name] = self._MESAstar1History.get(name)[0]
+                    except KeyError:
+                        logger.debug(f"   could not find `{name}` in star1 MESA output")
+
+            if self.have_mesastar2:
+                initials["star2"] = dict()
+                for name in history_columns_dict.get("star"):
+                    try:
+                        initials["star2"][name] = self._MESAstar2History.get(name)[0]
+                    except KeyError:
+                        logger.debug(f"   could not find `{name}` in star2 MESA output")
+
+        if "binary" in history_columns_dict:
+            if self.have_mesabinary:
+                initials["binary"] = dict()
+                for name in history_columns_dict.get("binary"):
+                    try:
+                        initials["binary"][name] = self._MESAbinaryHistory.get(name)[0]
+                    except KeyError:
+                        logger.debug(f"   could not find `{name}` in binary MESA output")
+
+        self.Initials = initials
