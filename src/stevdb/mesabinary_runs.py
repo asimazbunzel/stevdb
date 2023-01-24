@@ -16,6 +16,7 @@ from pathlib import Path
 # from pathlib import PosixPath
 from typing import Union
 
+from .io.io import load_yaml
 from .io.io import progress_bar
 from .io.logger import logger
 from .mesa import MESArun
@@ -45,6 +46,9 @@ class MESAbinaryGrid(object):
 
     mesa_binary_dict : `dict`
         TBD
+
+    stevdb_dict : `dict`
+        TBD
     """
 
     def __init__(
@@ -55,6 +59,7 @@ class MESAbinaryGrid(object):
         template_directory: Union[str, Path] = "",
         runs_directory: Union[str, Path] = "",
         mesa_binary_dict: dict = {},
+        stevdb_dict: dict = {},
     ) -> None:
 
         self.replace_evolutions = replace_evolutions
@@ -66,6 +71,7 @@ class MESAbinaryGrid(object):
         self.runs_directory = runs_directory
 
         self.mesa_binary_dict = mesa_binary_dict
+        self.stevdb_dict = stevdb_dict
 
         self.runs = self._get_list_of_models()
 
@@ -118,21 +124,36 @@ class MESAbinaryGrid(object):
             name = run.split("/")[-2]
             self.MESAsummary = MESArun(
                 template_directory=self.template_directory,
-                run_directory=self.runs_directory,
+                run_root_directory=self.runs_directory,
                 run_name=name,
                 is_binary_evolution=True,
                 **self.mesa_binary_dict,
             )
 
+            # check if simulation has actual MESA output, else do not try to make a summary of them
             if self.MESAsummary.should_have_mesabinary and not self.MESAsummary.have_mesabinary:
                 logger.info("simulation does not have MESAbinary output. skipping it")
                 continue
 
+            if self.MESAsummary.should_have_mesastar1 and not self.MESAsummary.have_mesastar1:
+                logger.info("simulation does not have MESAstar1 output. skipping it")
+                continue
+
+            if self.MESAsummary.should_have_mesastar2 and not self.MESAsummary.have_mesastar2:
+                logger.info("simulation does not have MESAstar2 output. skipping it")
+                continue
+
             # initial conditions of binary system
-            self.MESAsummary.get_initial_conditions()
+            if self.stevdb_dict.get("track_initials"):
+                initials_dict = self.__load_history_columns_dict(key="initials")
+                self.MESAsummary.get_initials(history_columns_dict=initials_dict)
 
-            self.MESAsummary.get_termination_code()
+            # self.MESAsummary.get_termination_code()
+            # self.MESAsummary.get_xrb_phase()
 
-            self.MESAsummary.get_xrb_phase()
-
+            print("debugging summary of MESA run")
             sys.exit(0)
+
+    def __load_history_columns_dict(self, key: str = "") -> dict:
+        """Load dictionary with names of MESA history_columns.list to track initial conditions"""
+        return load_yaml(fname=self.stevdb_dict.get("history_columns_list")).get(key)
