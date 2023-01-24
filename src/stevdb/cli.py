@@ -67,6 +67,7 @@ def start():
     # useful shortcuts
     admin_dict = core.config.get("Admin")
     mesa_dict = core.config.get("MESA")
+    stevdb_dict = core.config.get("Stevdb")
 
     # set up the grid manager
     if mesa_dict.get("id") == "mesabinary":
@@ -78,6 +79,7 @@ def start():
             template_directory=mesa_dict.get("template_directory"),
             runs_directory=mesa_dict.get("runs_directory"),
             mesa_binary_dict=mesa_dict.get("mesabinary"),
+            stevdb_dict=stevdb_dict,
         )
     elif core.config.get("Admin")["id"] == "mesastar":
         logger.error("`mesastar` grid is not ready to be used")
