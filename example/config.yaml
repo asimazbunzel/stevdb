@@ -22,6 +22,8 @@ MESA:
   # id of the grid of simulations. Options are `mesastar` and `mesabinary`
   id: "mesabinary"
 
+  # options needed for a summary of a MESAbinary simulation. They are used when the id flag
+  # is equal to "mesabinary"
   mesabinary:
 
     # $MESA_DIR value
@@ -41,8 +43,20 @@ MESA:
     history_name_star2: ""
 
     termination_directory: "termination_codes"
-    termination_name: "termination_star_plus_star"
+    termination_name: "termination_code_star_plus_point_mass"
 
+  # as the previous options but for the case of id = "mesastar"
   mesastar:
 
     skip_summary: True
+
+Stevdb:
+
+  # filename with the list of MESA history_column names to save in database
+  history_columns_list : "/home/asimazbunzel/Developments/stevdb/example/history.yaml"
+
+  # which phases will the code track
+  track_initials: True
+  track_finals: True
+  track_xrb_phase: False
+  track_ce_phase: False
