@@ -56,7 +56,12 @@ class MESAdata(object):
     """
 
     def __init__(
-        self, history_name: Union[str, Path] = "", termination_name: Union[str, Path] = "", mesa_dir: str = "", compress: bool = False
+        self,
+        history_name: Union[str, Path] = "",
+        termination_name: Union[str, Path] = "",
+        core_collapse_name: Union[str, Path] = "",
+        mesa_dir: str = "",
+        compress: bool = False,
     ) -> None:
 
         # always use pathlib
@@ -79,6 +84,10 @@ class MESAdata(object):
         self.history_name = history_name
         self.compress = compress
         # always use pathlib
+        if isinstance(core_collapse_name, str):
+            self.core_collapse_name = Path(core_collapse_name)
+        else:
+            self.core_collapse_name = core_collapse_name
         if isinstance(termination_name, str):
             self.termination_name = Path(termination_name)
         else:
@@ -86,7 +95,14 @@ class MESAdata(object):
         self.mesa_dir = mesa_dir
         self.header = dict()
         self.data = dict()
+        self.data_cc = dict()
+
+        # get termination code
         self.termination_code = self.termination_condition()
+
+        # also, look for a file which has the information of the collapsing core
+        # this is only possible for stars reaching core-collapse
+        self.reaches_core_collapse = self.has_core_collapse_file()
 
         # flag to check if it is a history file or not, based on the name of the file
         is_history = False
@@ -180,6 +196,18 @@ class MESAdata(object):
             except Exception:
                 pass
 
+        if self.reaches_core_collapse:
+            with open(self.core_collapse_name, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    name = line.split(" ")[0]
+                    try:
+                        value = float(line.split(" ")[-1])
+                    except ValueError:
+                        value = str(line.split(" ")[-1])
+
+                    self.data_cc[name] = value
+
     def get(self, arg):
         """
         Given a column name, it returns its values.
@@ -194,7 +222,17 @@ class MESAdata(object):
         a: `list`
             Array of elements corresponding to the column name given
         """
-        return self.data[arg]
+        if arg in self.data:
+            return self.data[arg]
+        elif arg in self.data_cc:
+            return self.data_cc[arg]
+        else:
+            raise KeyError(f"could not find `{arg}` in data nor in data_cc")
+
+    def has_core_collapse_file(self) -> bool:
+        """Find out if the simulation has reached core-collapse stage"""
+
+        return self.core_collapse_name.is_file()
 
     def termination_condition(self) -> str:
         """Find out how the simulation ended"""
