@@ -42,8 +42,15 @@ MESA:
     history_name_star1: "history.data"
     history_name_star2: ""
 
+    # where termination code is stored
     termination_directory: "termination_codes"
     termination_name: "termination_code_star_plus_point_mass"
+
+    # location of the core-collapse information (in case there is)
+    core_collapse_directory: "cc_data"
+    core_collapse_name_binary: "binary_at_core_collapse.data"
+    core_collapse_name_star1: "star_at_core_collapse.data"
+    core_collapse_name_star2: ""
 
   # as the previous options but for the case of id = "mesastar"
   mesastar:

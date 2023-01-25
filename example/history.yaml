@@ -1,0 +1,43 @@
+initials:
+
+  star: [
+    "star_mass",
+    "surf_avg_omega_div_omega_crit",
+  ]
+
+  binary: [
+    "star_1_mass",
+    "star_2_mass",
+    "period_days",
+    "binary_separation",
+    "eccentricity",
+    "P_rot_div_P_orb_1",
+    "star_1_radius",
+    "rl_1",
+    "rl2_donor",
+    "a_Darwin",
+  ]
+
+finals:
+
+  star: [
+    "mass_pre_cc",
+    "he_core_mass_pre_cc",
+    "c_core_mass_pre_cc",
+    "star_radius_pre_cc",
+    "sn_model",
+    "baryonic_mass",
+    "remnant_mass",
+    "ejected_mass",
+    "fallback_mass",
+    "fallback_fraction",
+  ]
+
+  binary: [
+    "period_pre_cc",
+    "period_pre_cc",
+  ]
+
+ce_phase:
+
+XRB_phase:
