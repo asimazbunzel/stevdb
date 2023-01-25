@@ -151,7 +151,11 @@ class MESAbinaryGrid(object):
                 initials_dict = self.__load_history_columns_dict(key="initials")
                 self.MESAsummary.get_initials(history_columns_dict=initials_dict)
 
-            # self.MESAsummary.get_termination_code()
+            # final conditions of binary system
+            if self.stevdb_dict.get("track_finals"):
+                finals_dict = self.__load_history_columns_dict(key="finals")
+                self.MESAsummary.get_finals(history_columns_dict=finals_dict)
+
             # self.MESAsummary.get_xrb_phase()
 
             print("debugging summary of MESA run")

@@ -197,13 +197,63 @@ class MESArun(object):
             logger.error(f"file with termination code does not exist (file: `{str(termination_fname)}`)")
             sys.exit(1)
 
+        # core-collapse info (in case simulation has reached that stage)
+        core_collapse_directory = kwargs.get("core_collapse_directory")
+        if self.should_have_mesabinary:
+            core_collapse_name_binary = kwargs.get("core_collapse_name_binary")
+            try:
+                fname_binary_cc = (
+                    Path(self.run_root_directory) / Path(self.run_name) / Path(core_collapse_directory) / Path(core_collapse_name_binary)
+                )
+            except TypeError:
+                logger.error(
+                    "Need complete path to (binary) core-collapse filename to load MESA output and some of them are missing. "
+                    "Please check if `core_collapse_directory` and `core_collapse_name_binary` are set in the configuration file"
+                )
+                sys.exit(1)
+
+        if self.should_have_mesastar1:
+            core_collapse_name_star1 = kwargs.get("core_collapse_name_star1")
+            try:
+                fname_star1_cc = (
+                    Path(self.run_root_directory) / Path(self.run_name) / Path(core_collapse_directory) / Path(core_collapse_name_star1)
+                )
+            except TypeError:
+                logger.error(
+                    "Need complete path to (star1) core-collapse filename to load MESA output and some of them are missing. "
+                    "Please check if `core_collapse_directory` and `core_collapse_name_star1` are set in the configuration file"
+                )
+                sys.exit(1)
+
+        if self.should_have_mesastar2:
+            core_collapse_name_star2 = kwargs.get("core_collapse_name_star2")
+            try:
+                fname_star2_cc = (
+                    Path(self.run_root_directory) / Path(self.run_name) / Path(core_collapse_directory) / Path(core_collapse_name_star2)
+                )
+            except TypeError:
+                logger.error(
+                    "Need complete path to (star2) core-collapse filename to load MESA output and some of them are missing. "
+                    "Please check if `core_collapse_directory` and `core_collapse_name_star2` are set in the configuration file"
+                )
+                sys.exit(1)
+
         # load MESAbinary stuff
         if self.should_have_mesabinary:
-            self._MESAbinaryHistory = MESAdata(history_name=fname_binary, termination_name=str(termination_fname), mesa_dir=self.mesa_dir)
+            self._MESAbinaryHistory = MESAdata(
+                history_name=fname_binary,
+                termination_name=str(termination_fname),
+                core_collapse_name=fname_binary_cc,
+                mesa_dir=self.mesa_dir,
+            )
         if self.should_have_mesastar1:
-            self._MESAstar1History = MESAdata(history_name=fname_star1, termination_name=str(termination_fname), mesa_dir=self.mesa_dir)
+            self._MESAstar1History = MESAdata(
+                history_name=fname_star1, termination_name=str(termination_fname), core_collapse_name=fname_star1_cc, mesa_dir=self.mesa_dir
+            )
         if self.should_have_mesastar2:
-            self._MESAstar2History = MESAdata(history_name=fname_star2, termination_name=str(termination_fname), mesa_dir=self.mesa_dir)
+            self._MESAstar2History = MESAdata(
+                history_name=fname_star2, termination_name=str(termination_fname), core_collapse_name=fname_star2_cc, mesa_dir=self.mesa_dir
+            )
 
         if self._MESAbinaryHistory is not None:
             self.have_mesabinary = True
@@ -275,3 +325,50 @@ class MESArun(object):
                         logger.debug(f"   could not find `{name}` in binary MESA output")
 
         self.Initials = initials
+
+    def get_finals(self, history_columns_dict: dict = {}) -> None:
+        """Get final conditions of a MESA run
+
+        Parameters
+        ----------
+        history_columns_list : `dict`
+            Dictionary with the core-collapse (custom MESA module) column names to search for final conditions
+        """
+
+        if "star" not in history_columns_dict and "binary" not in history_columns_dict:
+            logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
+            sys.exit(1)
+
+        finals = dict()
+
+        # search for star conditions
+        if "star" in history_columns_dict:
+            if self.have_mesastar1:
+                finals["star1"] = dict()
+                for name in history_columns_dict.get("star"):
+                    try:
+                        finals["star1"][name] = self._MESAstar1History.get(name)
+                    except KeyError:
+                        logger.debug(f"   could not find `{name}` in star1 MESA output")
+                        finals["star1"][name] = None
+
+            if self.have_mesastar2:
+                finals["star2"] = dict()
+                for name in history_columns_dict.get("star"):
+                    try:
+                        finals["star2"][name] = self._MESAstar2History.get(name)
+                    except KeyError:
+                        logger.debug(f"   could not find `{name}` in star2 MESA output")
+                        finals["star2"][name] = None
+
+        if "binary" in history_columns_dict:
+            if self.have_mesabinary:
+                finals["binary"] = dict()
+                for name in history_columns_dict.get("binary"):
+                    try:
+                        finals["binary"][name] = self._MESAbinaryHistory.get(name)
+                    except KeyError:
+                        logger.debug(f"   could not find `{name}` in binary MESA output")
+                        finals["binary"][name] = None
+
+        self.finals = finals
