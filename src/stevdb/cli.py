@@ -18,6 +18,7 @@ import os
 import platform
 import signal
 import sys
+import time
 
 from .base import Manager
 from .io.logger import LOG_FILENAME
@@ -34,6 +35,10 @@ def __signal_handler(signal, frame):
 def end():
     """Stop manager"""
 
+    # time it
+    end = time.time()
+
+    logger.info(f"[-- manager uptime: {end - start:.2f} sec --]")
     logger.info("manager stopped")
 
     sys.exit(0)
@@ -42,17 +47,26 @@ def end():
 def loop():
     """Manager will be updated in this loop"""
 
+    # useful shortcuts
+    # admin_dict = core.config.get("Admin")
+
     # first thing, make a summary of each simulation
     gridManager.create_summary()
 
     # keep on going with manager being active
     keep_alive = True
     while keep_alive:
-        pass
+        print()
+        print("daemon mode not ready to use. exit program now")
+        end()
 
 
 def start():
     """Start manager"""
+
+    # time it
+    global start
+    start = time.time()
 
     # if only want to print database name and exit
     if core.args.log_fname:
@@ -92,6 +106,9 @@ def start():
 def main():
     """Main driver for stellar evolution manager"""
 
+    logger.info("********************************************************")
+    logger.info("          Stellar Evolution Database Manager            ")
+    logger.info("********************************************************")
     logger.info("initialize database manager for stellar evolution models")
 
     # catch CTRL-C signal

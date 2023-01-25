@@ -34,7 +34,7 @@ finals:
 
   binary: [
     "period_pre_cc",
-    "period_pre_cc",
+    "separation_pre_cc",
   ]
 
 ce_phase:
