@@ -297,30 +297,35 @@ class MESArun(object):
 
         initials = dict()
 
+        # store location of run and template as it might be important when looking for profiles
+        # as PosixPath is not considered a string, we change it here just to avoid conflicts when
+        # saving info into a database
+        initials["template_directory"] = str(self.template_directory)
+        initials["run_root_directory"] = str(self.run_root_directory)
+        initials["run_name"] = self.run_name
+        initials["is_binary_evolution"] = self.is_binary_evolution
+
         # search for star conditions
         if "star" in history_columns_dict:
             if self.have_mesastar1:
-                initials["star1"] = dict()
                 for name in history_columns_dict.get("star"):
                     try:
-                        initials["star1"][name] = self._MESAstar1History.get(name)[0]
+                        initials[f"{name}_1"] = self._MESAstar1History.get(name)[0]
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star1 MESA output")
 
             if self.have_mesastar2:
-                initials["star2"] = dict()
                 for name in history_columns_dict.get("star"):
                     try:
-                        initials["star2"][name] = self._MESAstar2History.get(name)[0]
+                        initials[f"{name}_2"] = self._MESAstar2History.get(name)[0]
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star2 MESA output")
 
         if "binary" in history_columns_dict:
             if self.have_mesabinary:
-                initials["binary"] = dict()
                 for name in history_columns_dict.get("binary"):
                     try:
-                        initials["binary"][name] = self._MESAbinaryHistory.get(name)[0]
+                        initials[name] = self._MESAbinaryHistory.get(name)[0]
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in binary MESA output")
 
@@ -344,31 +349,28 @@ class MESArun(object):
         # search for star conditions
         if "star" in history_columns_dict:
             if self.have_mesastar1:
-                finals["star1"] = dict()
                 for name in history_columns_dict.get("star"):
                     try:
-                        finals["star1"][name] = self._MESAstar1History.get(name)
+                        finals[f"{name}_1"] = self._MESAstar1History.get(name)
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star1 MESA output")
-                        finals["star1"][name] = None
+                        finals[f"{name}_1"] = None
 
             if self.have_mesastar2:
-                finals["star2"] = dict()
                 for name in history_columns_dict.get("star"):
                     try:
-                        finals["star2"][name] = self._MESAstar2History.get(name)
+                        finals[f"{name}_2"] = self._MESAstar2History.get(name)
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star2 MESA output")
-                        finals["star2"][name] = None
+                        finals[f"{name}_2"] = None
 
         if "binary" in history_columns_dict:
             if self.have_mesabinary:
-                finals["binary"] = dict()
                 for name in history_columns_dict.get("binary"):
                     try:
-                        finals["binary"][name] = self._MESAbinaryHistory.get(name)
+                        finals[name] = self._MESAbinaryHistory.get(name)
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in binary MESA output")
-                        finals["binary"][name] = None
+                        finals[name] = None
 
-        self.finals = finals
+        self.Finals = finals
