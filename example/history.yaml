@@ -1,7 +1,6 @@
 initials:
 
   star: [
-    "star_mass",
     "surf_avg_omega_div_omega_crit",
   ]
 

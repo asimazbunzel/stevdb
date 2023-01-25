@@ -64,6 +64,10 @@ Stevdb:
 
   # which phases will the code track
   track_initials: True
+  id_for_initials_in_database: "MESArunINIT"
   track_finals: True
+  id_for_finals_in_database: "MESArunCC"
   track_xrb_phase: False
+  id_for_xrb_phase_in_database: ""
   track_ce_phase: False
+  id_for_ce_phase_in_database: ""
