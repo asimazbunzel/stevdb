@@ -216,6 +216,22 @@ class MESArun(object):
         logger.debug(f"   MESAstar1 flags (have): {self.have_mesastar1}")
         logger.debug(f"   MESAstar2 flags (have): {self.have_mesastar2}")
 
+    def get_termination_code(self) -> None:
+        """Set the value of the termination_code string of a MESA simulation"""
+
+        if self.have_mesabinary:
+            self.termination_code = self._MESAbinaryHistory.termination_code
+
+        elif self.have_mesastar1:
+            self.termination_code = self._MESAstar1History.termination_code
+
+        elif self.have_mesastar2:
+            self.termination_code = self._MESAstar2History.termination_code
+
+        else:
+            logger.error("`have_mesabinary`, `have_mesastar1` and `have_mesastar2` are all false at the same time ! something is not right")
+            sys.exit(1)
+
     def get_initials(self, history_columns_dict: dict = {}) -> None:
         """Get initial conditions of a MESA run
 

@@ -143,6 +143,9 @@ class MESAbinaryGrid(object):
                 logger.info("simulation does not have MESAstar2 output. skipping it")
                 continue
 
+            # always grab first the termination_code string
+            self.MESAsummary.get_termination_code()
+
             # initial conditions of binary system
             if self.stevdb_dict.get("track_initials"):
                 initials_dict = self.__load_history_columns_dict(key="initials")
