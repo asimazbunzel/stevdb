@@ -49,7 +49,7 @@ class MESArun(object):
         **kwargs,
     ) -> None:
 
-        logger.debug(" loading MESArun")
+        logger.debug(" initializing MESArun")
 
         # let folders be handled by pathlib module
         if isinstance(template_directory, str):
@@ -86,6 +86,7 @@ class MESArun(object):
             self.should_have_mesabinary = True
 
         logger.debug(f"  `should_have_mesabinary`: {self.should_have_mesabinary}")
+        logger.debug(f"  `should_have_mesastar1`: {self.should_have_mesastar1}")
 
         # flag to control the type of MESAbinary run
         if "evolve_both_stars" in kwargs.keys():
@@ -112,9 +113,9 @@ class MESArun(object):
                 raise ValueError("need `mesa_dir` variable to make a summary of a simulation")
 
         logger.debug(f"  `mesa_dir`: {self.mesa_dir}")
-        logger.debug(f"   MESAbinary flags (should_have): {self.should_have_mesabinary}")
-        logger.debug(f"   MESAstar1 flags (should_have): {self.should_have_mesastar1}")
-        logger.debug(f"   MESAstar2 flags (should_have): {self.should_have_mesastar2}")
+        logger.debug(f"  MESAbinary flags (should_have): {self.should_have_mesabinary}")
+        logger.debug(f"  MESAstar1 flags (should_have): {self.should_have_mesastar1}")
+        logger.debug(f"  MESAstar2 flags (should_have): {self.should_have_mesastar2}")
 
         # _MESA*History contains the output of a MESA simulation saved in the MESAdata object
         self._MESAbinaryHistory = None
@@ -130,6 +131,8 @@ class MESArun(object):
     def _load_MESA_output(self, kwargs):
         """Load MESA output"""
 
+        logger.debug(" loading MESA output")
+
         # depending on the type of run, load specific MESAstar/binary output
         if self.should_have_mesabinary:
             log_directory_binary = kwargs.get("log_directory_binary")
@@ -144,8 +147,7 @@ class MESArun(object):
                 sys.exit(1)
 
             if not fname_binary.is_file() and not Path(f"{str(fname_binary)}.gz").is_file():
-                logger.error(f"MESA output for binary does not exist (file: `{str(fname_binary)}`)")
-                sys.exit(1)
+                logger.debug(f"  MESA output for binary does not exist (file: `{str(fname_binary)}`)")
 
         # star 1 output
         if self.should_have_mesastar1:
@@ -161,8 +163,7 @@ class MESArun(object):
                 sys.exit(1)
 
             if not fname_star1.is_file() and not Path(f"{str(fname_star1)}.gz").is_file():
-                logger.error(f"MESA output for star1 does not exist (file: `{str(fname_star1)}`)")
-                sys.exit(1)
+                logger.debug(f"  MESA output for star1 does not exist (file: `{str(fname_star1)}`)")
 
         # star2 output
         if self.should_have_mesastar2:
@@ -178,8 +179,7 @@ class MESArun(object):
                 sys.exit(1)
 
             if not fname_star2.is_file() and not Path(f"{str(fname_star2)}.gz").is_file():
-                logger.error(f"MESA output for star2 does not exist (file: `{str(fname_star2)}`)")
-                sys.exit(1)
+                logger.debug(f"  MESA output for star2 does not exist (file: `{str(fname_star2)}`)")
 
         # termination code of the simulation
         termination_directory = kwargs.get("termination_directory")
@@ -194,8 +194,7 @@ class MESArun(object):
             sys.exit(1)
 
         if not termination_fname.is_file():
-            logger.error(f"file with termination code does not exist (file: `{str(termination_fname)}`)")
-            sys.exit(1)
+            logger.debug(f"  file with termination code does not exist (file: `{str(termination_fname)}`)")
 
         # core-collapse info (in case simulation has reached that stage)
         core_collapse_directory = kwargs.get("core_collapse_directory")
@@ -240,20 +239,35 @@ class MESArun(object):
 
         # load MESAbinary stuff
         if self.should_have_mesabinary:
-            self._MESAbinaryHistory = MESAdata(
-                history_name=fname_binary,
-                termination_name=str(termination_fname),
-                core_collapse_name=fname_binary_cc,
-                mesa_dir=self.mesa_dir,
-            )
+            try:
+                self._MESAbinaryHistory = MESAdata(
+                    history_name=fname_binary,
+                    termination_name=str(termination_fname),
+                    core_collapse_name=fname_binary_cc,
+                    mesa_dir=self.mesa_dir,
+                )
+            except FileNotFoundError:
+                pass
         if self.should_have_mesastar1:
-            self._MESAstar1History = MESAdata(
-                history_name=fname_star1, termination_name=str(termination_fname), core_collapse_name=fname_star1_cc, mesa_dir=self.mesa_dir
-            )
+            try:
+                self._MESAstar1History = MESAdata(
+                    history_name=fname_star1,
+                    termination_name=str(termination_fname),
+                    core_collapse_name=fname_star1_cc,
+                    mesa_dir=self.mesa_dir,
+                )
+            except FileNotFoundError:
+                pass
         if self.should_have_mesastar2:
-            self._MESAstar2History = MESAdata(
-                history_name=fname_star2, termination_name=str(termination_fname), core_collapse_name=fname_star2_cc, mesa_dir=self.mesa_dir
-            )
+            try:
+                self._MESAstar2History = MESAdata(
+                    history_name=fname_star2,
+                    termination_name=str(termination_fname),
+                    core_collapse_name=fname_star2_cc,
+                    mesa_dir=self.mesa_dir,
+                )
+            except FileNotFoundError:
+                pass
 
         if self._MESAbinaryHistory is not None:
             self.have_mesabinary = True
@@ -268,6 +282,8 @@ class MESArun(object):
 
     def get_termination_code(self) -> None:
         """Set the value of the termination_code string of a MESA simulation"""
+
+        logger.debug(" getting termination condition (code) of MESArun")
 
         if self.have_mesabinary:
             self.termination_code = self._MESAbinaryHistory.termination_code
@@ -290,6 +306,8 @@ class MESArun(object):
         history_columns_list : `dict`
             Dictionary with the MESA column names to search for initial conditions
         """
+
+        logger.debug(" getting initial conditions of MESArun")
 
         if "star" not in history_columns_dict and "binary" not in history_columns_dict:
             logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
@@ -340,11 +358,16 @@ class MESArun(object):
             Dictionary with the core-collapse (custom MESA module) column names to search for final conditions
         """
 
+        logger.debug(" getting final conditions of MESArun")
+
         if "star" not in history_columns_dict and "binary" not in history_columns_dict:
             logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
             sys.exit(1)
 
         finals = dict()
+
+        # need run_name when saving Final values
+        finals["run_name"] = self.run_name
 
         # search for star conditions
         if "star" in history_columns_dict:
