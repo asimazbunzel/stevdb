@@ -52,7 +52,12 @@ def create_database(database_filename: str = "", table_name: str = "", table_dic
     # but changing the keys in the star* dicts in order to contain an identificator to the star
     # to which it corresponds
     for key, value in table_dict.items():
-        cmd += f"{key} {dtype_map[type(value)]}, "
+        # sometimes, None values are passed (tipically with Final values). this is an ugly
+        # path to avoid errors; # TODO: improve on this
+        if isinstance(value, None):
+            cmd += f"{key} REAL, "
+        else:
+            cmd += f"{key} {dtype_map[type(value)]}, "
 
     # wrap up command with the final parenthesis
     cmd = cmd[:-2]
