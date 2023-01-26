@@ -54,7 +54,7 @@ def create_database(database_filename: str = "", table_name: str = "", table_dic
     for key, value in table_dict.items():
         # sometimes, None values are passed (tipically with Final values). this is an ugly
         # path to avoid errors; # TODO: improve on this
-        if isinstance(value, None):
+        if value is None:
             cmd += f"{key} REAL, "
         else:
             cmd += f"{key} {dtype_map[type(value)]}, "
