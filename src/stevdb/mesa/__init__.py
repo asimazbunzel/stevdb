@@ -25,6 +25,10 @@ from .defaults import get_mesa_defaults
 from .mesa import MESAdata
 
 
+class NoMESArun(Exception):
+    pass
+
+
 class MESArun(object):
     """Object matching a single MESA run
 
