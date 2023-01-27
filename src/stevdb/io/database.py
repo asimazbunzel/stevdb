@@ -2,8 +2,8 @@
 Database module
 """
 
-
 import sqlite3
+import time
 from collections import OrderedDict
 
 import numpy as np
@@ -26,7 +26,10 @@ def create_database(database_filename: str = "", table_name: str = "", table_dic
         Dictionary with the information to be stored in the table of the database
     """
 
-    logger.debug(f" creating database table {table_name}")
+    logger.debug(f" creating database table: {table_name}")
+
+    # (tstart) for timing db creation
+    tstart = time.time()
 
     # maps between python and sqlite
     dtype_map = {
@@ -72,6 +75,10 @@ def create_database(database_filename: str = "", table_name: str = "", table_dic
     # close connection
     conn.close()
 
+    # (tend) timing of db creation
+    tend = time.time()
+    logger.debug(f" [database creation time: {tend-tstart:.2f} sec]")
+
 
 def insert_run_into_database(database_filename: str = "", table_name: str = "", table_dict: OrderedDict = OrderedDict()) -> None:
     """Insert record into a database
@@ -87,6 +94,11 @@ def insert_run_into_database(database_filename: str = "", table_name: str = "", 
     table_dict : `dict`
         Dictionary with the information to be stored in the table of the database
     """
+
+    logger.debug(f" inserting record into database table: {table_name}")
+
+    # (tstart) for timing db data insertion
+    tstart = time.time()
 
     # create database
     conn = sqlite3.connect(database_filename)
@@ -118,3 +130,7 @@ def insert_run_into_database(database_filename: str = "", table_name: str = "", 
 
     # close connection
     conn.close()
+
+    # (tend) timing of db data insertion
+    tend = time.time()
+    logger.debug(f" [database record insertion time: {tend-tstart:.2f} sec]")
