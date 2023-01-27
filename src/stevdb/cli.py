@@ -23,6 +23,7 @@ import time
 from .base import Manager
 from .io.logger import LOG_FILENAME
 from .io.logger import logger
+from .mesa import NoMESArun
 from .mesabinary_runs import MESAbinaryGrid
 
 
@@ -44,21 +45,66 @@ def end():
     sys.exit(0)
 
 
-def loop():
+def watch():
     """Manager will be updated in this loop"""
 
     # useful shortcuts
-    # admin_dict = core.config.get("Admin")
+    admin_dict = core.config.get("Admin")
 
     # first thing, make a summary of each simulation
-    gridManager.create_summary()
+    gridManager.do_run_summary()
 
     # keep on going with manager being active
     keep_alive = True
     while keep_alive:
-        print()
-        print("daemon mode not ready to use. exit program now")
-        end()
+
+        # get the previous list of runs
+        previous_list_of_runs = gridManager.runs
+
+        # wait a while before updating list of runs
+        logger.info(f"manager will now enter into waiting mode for {admin_dict.get('waiting_time_in_sec')} sec")
+        time.sleep(admin_dict.get("waiting_time_in_sec"))
+
+        # update list of runs and compare to previous one
+        gridManager.update_list_of_models()
+        new_list_of_runs = gridManager.runs
+
+        if len(new_list_of_runs) > len(previous_list_of_runs):
+            logger.info(f"new {len(new_list_of_runs) - len(previous_list_of_runs)} run(s) found ! trying to update database")
+            # find which elements are new
+            previous_set = set(previous_list_of_runs)
+            new_set = set(new_list_of_runs)
+            unique_runs = new_set.difference(previous_set)
+            logger.info(f"new runs to include into database: {str(unique_runs)}")
+
+            # loop through new runs to append to database using single methods of the MESAbinaryGrid class
+            for run in unique_runs:
+
+                # remove absolute path, get folder name where run is located
+                name = run.split("/")[-2]
+
+                # create summary
+                try:
+                    NewSummary = gridManager.run1_summary(run_name=name)
+
+                except NoMESArun:
+                    continue
+
+                except NotImplementedError:
+                    continue
+
+                # if no exception was triggered, insert data into it
+                else:
+                    gridManager.do_summary_info(runSummary=NewSummary)
+
+        elif len(new_list_of_runs) < len(previous_list_of_runs):
+            logger.error("new list of runs is less than earlier. something is VERY WRONG")
+            keep_alive = False
+
+        else:
+            logger.info("no new runs found ! continue waiting")
+
+    end()
 
 
 def start():
@@ -128,7 +174,7 @@ def main():
     start()
 
     # start loop
-    loop()
+    watch()
 
     # shutdown
     end()
