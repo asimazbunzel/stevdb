@@ -335,6 +335,8 @@ class MESArun(object):
                         initials[f"{name}_1"] = self._MESAstar1History.get(name)[0]
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star1 MESA output")
+                    except IndexError:
+                        initials[f"{name}_1"] = self._MESAstar1History.get(name)
 
             if self.have_mesastar2:
                 for name in history_columns_dict.get("star"):
@@ -342,6 +344,8 @@ class MESArun(object):
                         initials[f"{name}_2"] = self._MESAstar2History.get(name)[0]
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star2 MESA output")
+                    except IndexError:
+                        initials[f"{name}_2"] = self._MESAstar2History.get(name)
 
         if "binary" in history_columns_dict:
             if self.have_mesabinary:
@@ -350,6 +354,8 @@ class MESArun(object):
                         initials[name] = self._MESAbinaryHistory.get(name)[0]
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in binary MESA output")
+                    except IndexError:
+                        initials[name] = self._MESAbinaryHistory.get(name)
 
         self.Initials = initials
 
