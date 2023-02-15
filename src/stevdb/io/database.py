@@ -37,6 +37,7 @@ def create_database(database_filename: str = "", table_name: str = "", table_dic
         int: "INTEGER",
         float: "REAL",
         np.float64: "REAL",
+        np.ndarray: "REAL",
         str: "TEXT",
         bytes: "BLOB",
         bool: "INTEGER",
