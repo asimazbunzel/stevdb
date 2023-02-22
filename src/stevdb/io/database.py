@@ -162,7 +162,6 @@ def load_database(database_filename: str = "", table_name: str = "", run_name: s
     # row[1]: run_name
     run_id = -1
     for row in data:
-        print(row[0], row[1], run_name)
         if row[1] == run_name:
             run_id = row[0]
             break

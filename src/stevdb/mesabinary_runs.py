@@ -71,7 +71,9 @@ class MESAbinaryGrid(object):
         self.runs = self._get_list_of_models()
 
         # to overwrite database file, remove it first
-        if self.overwrite_database:
+        # TODO: add method to prunge DB, also investigate if TABLE element
+        # can be removed from database without removing entire DB file
+        if self.overwrite_database and False:
             try:
                 os.remove(database_name)
             except Exception:
@@ -141,6 +143,8 @@ class MESAbinaryGrid(object):
             **self.mesa_binary_dict,
         )
 
+        RunSummary.set_id(database_name=self.database_name)
+
         # check if simulation has actual MESA output, else do not try to make a summary of them
         if RunSummary.should_have_mesabinary and not RunSummary.have_mesabinary:
             logger.info(" simulation does not have MESAbinary output. skipping it")
@@ -169,6 +173,16 @@ class MESAbinaryGrid(object):
         if self.stevdb_dict.get("track_finals"):
             finals_dict = self.__load_history_columns_dict(key="finals")
             RunSummary.get_finals(history_columns_dict=finals_dict)
+
+            if "core-collapse" in RunSummary.Finals.get("condition"):
+                core_collapse_dict = self.__load_history_columns_dict(key="corecollapse")
+                RunSummary.get_core_collapse(history_columns_dict=core_collapse_dict)
+
+        print("\n")
+        print(RunSummary.Initials)
+        print(RunSummary.Finals)
+        print(RunSummary.CoreCollapse)
+        sys.exit()
 
         if self.stevdb_dict.get("track_xrb_phase"):
             raise NotImplementedError("`track_xrb_phase` is not ready to used")
