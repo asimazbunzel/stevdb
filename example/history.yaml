@@ -19,6 +19,21 @@ initials:
 
 finals:
 
+  misc: [
+    "status",
+    "condition",
+  ]
+
+  binary: [
+    "star_1_mass",
+    "star_2_mass",
+    "period_days",
+    "eccentricity",
+    "binary_separation",
+  ]
+
+corecollapse:
+
   star: [
     "mass_pre_cc",
     "he_core_mass_pre_cc",
