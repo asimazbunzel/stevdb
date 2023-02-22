@@ -134,3 +134,42 @@ def insert_run_into_database(database_filename: str = "", table_name: str = "", 
     # (tend) timing of db data insertion
     tend = time.time()
     logger.debug(f" [database record insertion time: {tend-tstart:.2f} sec]")
+
+
+def load_database(database_filename: str = "", table_name: str = "", run_name: str = "") -> None:
+    """Load table from database with the summary of the simulations
+
+    Parameters
+    ----------
+    database_filename : `str`
+        Name of the file with the database
+
+    table_name : `str`
+        Name of the table to be loaded
+    """
+
+    logger.debug(f" loading database table: {table_name} to locate run: {run_name}")
+
+    # create dbase connection
+    conn = sqlite3.connect(database_filename)
+
+    # connect it with a cursor
+    c = conn.cursor()
+
+    data = c.execute(f"SELECT * FROM {table_name}")
+
+    # row[0]: id
+    # row[1]: run_name
+    run_id = -1
+    for row in data:
+        print(row[0], row[1], run_name)
+        if row[1] == run_name:
+            run_id = row[0]
+            break
+
+    if run_id == -1:
+        logger.error(f" could not find id for run: {run_name}. setting to -1")
+
+    conn.close()
+
+    return run_id
