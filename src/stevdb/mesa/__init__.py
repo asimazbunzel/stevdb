@@ -321,11 +321,7 @@ class MESArun(object):
 
         logger.debug(" getting initial conditions of MESArun")
 
-        if "star" not in history_columns_dict and "binary" not in history_columns_dict:
-            logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
-            sys.exit(1)
-
-        self.Initials = self._get_dict_values_for_summary(history_columns_dict=history_columns_dict)
+        self.Initials = self._get_dict_values_for_summary(history_columns_dict=history_columns_dict, position="first")
 
         # also add id to dict
         self.Initials["id"] = self.run_id
@@ -341,11 +337,7 @@ class MESArun(object):
 
         logger.debug(" getting final conditions of MESArun")
 
-        if "star" not in history_columns_dict and "binary" not in history_columns_dict:
-            logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
-            sys.exit(1)
-
-        self.Finals = self._get_dict_values_for_summary(history_columns_dict=history_columns_dict)
+        self.Finals = self._get_dict_values_for_summary(history_columns_dict=history_columns_dict, position="last")
 
         # also add id to dict
         self.Finals["id"] = self.run_id
@@ -361,71 +353,84 @@ class MESArun(object):
 
         logger.debug(" getting core-collapse conditions of MESArun")
 
-        if "star" not in history_columns_dict and "binary" not in history_columns_dict:
-            logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
-            sys.exit(1)
-
-        self.CoreCollapse = self._get_dict_values_for_summary(history_columns_dict=history_columns_dict)
+        self.CoreCollapse = self._get_dict_values_for_summary(history_columns_dict=history_columns_dict, position="first")
 
         # also add id to dict
         self.CoreCollapse["id"] = self.run_id
 
-    def _get_dict_values_for_summary(self, history_columns_dict: dict = {}) -> dict:
+    def _get_dict_values_for_summary(self, history_columns_dict: list = [], position: str = "") -> dict:
         """Get values from a MESA run and store them into a dict
 
         Parameters
         ----------
-        history_columns_list : `dict`
-            Dictionary with the core-collapse (custom MESA module) column names to search for final conditions
+        history_columns_list : `list`
+            List with the core-collapse (custom MESA module) column names to search for final conditions
+
+        position : `str`
+            Position from which data will be obtained
         """
 
+        if position == "first":
+            pos = 0
+        elif position == "last":
+            pos = -1
+        else:
+            logger.error("`position` must be either `first` or `last`")
+            sys.exit(1)
+
+        for item in history_columns_dict:
+            if item["mesa_id"] not in ("star", "binary"):
+                logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
+                sys.exit(1)
+
         dictValues = dict()
+        for item in history_columns_dict:
+            # we use data as a wildcard variable to search for information on MESA output
+            # either for a star or binary output
+            if item["mesa_id"] == "star":
+                data = self._MESAstar1History
+                suffix = "_1"
+            else:
+                data = self._MESAbinaryHistory
+                suffix = ""
 
-        # search for star conditions
-        if "star" in history_columns_dict:
-            if self.have_mesastar1:
-                for name in history_columns_dict.get("star"):
-                    # patch for supernova model to work without changing too much the logic
-                    if name == "sn_model":
-                        dictValues[f"{name}_1"] = self._MESAstar1History.get(name)
-                    else:
-                        try:
-                            dictValues[f"{name}_1"] = self._MESAstar1History.get(name)[0]
-                        except KeyError:
-                            logger.debug(f"   could not find `{name}` in star1 MESA output")
-                            dictValues[f"{name}_1"] = None
-                        except (IndexError, TypeError):
-                            dictValues[name] = self._MESAstar1History.get(name)
+            for key, value in item.items():
 
-            if self.have_mesastar2:
-                for name in history_columns_dict.get("star"):
+                try:
+                    mesa_value = data.get(key)[pos]
+                except KeyError:
+                    logger.debug(f"   could not find `{key}` in MESA output. default is: {value}")
+                    mesa_value = value
+                except (IndexError, TypeError):
+                    mesa_value = data.get(key)
+
+                # patches to special characters
+                if key == "condition":
+                    mesa_value = data.termination_code
+                # `mesa_id` key is skipped:
+                if key == "mesa_id":
+                    continue
+
+                dictValues[f"{key}{suffix}"] = mesa_value
+
+                # repeat process if two stars are present
+                if self.have_mesastar2:
+                    data2 = self._MESAstar2History
                     try:
-                        dictValues[f"{name}_2"] = self._MESAstar2History.get(name)[0]
+                        mesa_value2 = data2.get(key)[pos]
                     except KeyError:
-                        logger.debug(f"   could not find `{name}` in star2 MESA output")
-                        dictValues[f"{name}_2"] = None
+                        logger.debug(f"   could not find `{key}` in MESA output. default is: {value}")
+                        mesa_value2 = value
                     except (IndexError, TypeError):
-                        dictValues[name] = self._MESAstar2History.get(name)
+                        mesa_value2 = data2.get(key)
 
-        if "binary" in history_columns_dict:
-            if self.have_mesabinary:
-                for name in history_columns_dict.get("binary"):
-                    try:
-                        dictValues[name] = self._MESAbinaryHistory.get(name)[0]
-                    except KeyError:
-                        logger.debug(f"   could not find `{name}` in binary MESA output")
-                        dictValues[name] = None
-                    except (IndexError, TypeError):
-                        dictValues[name] = self._MESAbinaryHistory.get(name)
+                    # patches to special characters
+                    if key == "condition":
+                        mesa_value2 = data.termination_code
+                    # `mesa_id` key is skipped:
+                    if key == "mesa_id":
+                        continue
 
-        if "misc" in history_columns_dict:
-            for name in history_columns_dict.get("misc"):
-                if name == "status":
-                    dictValues[name] = "finished"
-                elif name == "condition":
-                    dictValues[name] = self._MESAbinaryHistory.termination_code
-                else:
-                    logger.debug(f"   could not find `{name}` in MESA output")
-                    dictValues[name] = None
+                    dictValues[f"{key}_2"] = mesa_value2
 
         return dictValues
