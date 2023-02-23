@@ -178,12 +178,6 @@ class MESAbinaryGrid(object):
                 core_collapse_dict = self.__load_history_columns_dict(key="corecollapse")
                 RunSummary.get_core_collapse(history_columns_dict=core_collapse_dict)
 
-        print("\n")
-        print(RunSummary.Initials)
-        print(RunSummary.Finals)
-        print(RunSummary.CoreCollapse)
-        sys.exit()
-
         if self.stevdb_dict.get("track_xrb_phase"):
             raise NotImplementedError("`track_xrb_phase` is not ready to used")
 
