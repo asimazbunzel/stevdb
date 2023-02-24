@@ -4,7 +4,7 @@ Admin:
   replace_evolutions: False
 
   # database options
-  database_name: "/home/asimazbunzel/Projects/HMXB-NSBH/data/mesa-xrb.db"
+  database_name: "/home/asimazbunzel/Projects/HMXB-NSBH/hmxb.db"
   overwrite_database: True
 
   # monitor always on, while waiting `waiting_time_in_sec` before re-analyzing
