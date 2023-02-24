@@ -67,6 +67,7 @@ Stevdb:
   id_for_initials_in_database: "Initials"
   track_finals: True
   id_for_finals_in_database: "Finals"
+  id_for_core_collapse_in_database: "CoreCollapse"
   track_xrb_phase: False
   id_for_xrb_phase_in_database: ""
   track_ce_phase: False
