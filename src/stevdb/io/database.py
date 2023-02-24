@@ -59,6 +59,8 @@ def create_database(database_filename: str = "", table_name: str = "", table_dic
         # path to avoid errors; # TODO: improve on this
         if value is None:
             cmd += f"{key} REAL, "
+        elif value == "id":
+            cmd += f"{key} UNIQUE INT, "
         else:
             cmd += f"{key} {dtype_map[type(value)]}, "
 
@@ -106,7 +108,7 @@ def insert_run_into_database(database_filename: str = "", table_name: str = "", 
     # connect to it with a cursor
     c = conn.cursor()
 
-    cmd = f"INSERT INTO {table_name}"
+    cmd = f"INSERT OR REPLACE INTO {table_name}"
     cmd_column_names = "("
     cmd_column_values = "("
 
@@ -136,7 +138,7 @@ def insert_run_into_database(database_filename: str = "", table_name: str = "", 
     logger.debug(f" [database record insertion time: {tend-tstart:.2f} sec]")
 
 
-def load_database(database_filename: str = "", table_name: str = "", run_name: str = "") -> None:
+def load_id_from_database(database_filename: str = "", table_name: str = "", run_name: str = "") -> int:
     """Load table from database with the summary of the simulations
 
     Parameters
