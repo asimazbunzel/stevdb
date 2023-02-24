@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from typing import Union
 
-from ..io.database import load_database
+from ..io.database import load_id_from_database
 from ..io.logger import logger
 from .defaults import get_mesa_defaults
 from .mesa import MESAdata
@@ -306,9 +306,7 @@ class MESArun(object):
     def set_id(self, database_name: Union[str, Path] = "") -> None:
         """Get ID of a MESA run from a database table"""
 
-        self.run_id = load_database(database_filename=database_name, table_name="MESAruns", run_name=self.run_name)
-
-        return None
+        self.run_id = load_id_from_database(database_filename=database_name, table_name="MESAruns", run_name=self.run_name)
 
     def get_initials(self, history_columns_dict: dict = {}) -> None:
         """Get initial conditions of a MESA run
