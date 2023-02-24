@@ -220,6 +220,19 @@ class MESAbinaryGrid(object):
             if self.stevdb_dict.get("track_xrb_phase"):
                 logger.error("`track_ce_phase` not ready to be used")
 
+        # patch for cases where Core Collapse data is found after the first model is searched
+        # e.g., in the second simulation under exploration
+        if (
+            not self.doing_first_model_of_summary
+            and self.stevdb_dict.get("track_finals")
+            and "core-collapse" in runSummary.Finals.get("condition")
+        ):
+            create_database(
+                database_filename=self.database_name,
+                table_name=self.stevdb_dict.get("id_for_core_collapse_in_database"),
+                table_dict=runSummary.CoreCollapse,
+            )
+
         # next, insert data into tables, if tracking is enabled
         if self.stevdb_dict.get("track_initials"):
             insert_run_into_database(
