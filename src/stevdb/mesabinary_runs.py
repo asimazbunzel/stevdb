@@ -3,7 +3,6 @@ Module that manages a set of MESAbinary simulations
 """
 
 import glob
-import os
 import re
 import sys
 import time
@@ -50,7 +49,7 @@ class MESAbinaryGrid(object):
         self,
         replace_evolutions: bool = False,
         database_name: str = "",
-        overwrite_database: bool = True,
+        drop_tables: bool = True,
         template_directory: Union[str, Path] = "",
         runs_directory: Union[str, Path] = "",
         mesa_binary_dict: dict = {},
@@ -60,7 +59,7 @@ class MESAbinaryGrid(object):
         self.replace_evolutions = replace_evolutions
 
         self.database_name = database_name
-        self.overwrite_database = overwrite_database
+        self.drop_tables = drop_tables
 
         self.template_directory = template_directory
         self.runs_directory = runs_directory
@@ -70,17 +69,11 @@ class MESAbinaryGrid(object):
 
         self.runs = self._get_list_of_models()
 
-        # to overwrite database file, remove it first
-        # TODO: add method to prunge DB, also investigate if TABLE element
-        # can be removed from database without removing entire DB file
-        if self.overwrite_database and False:
-            try:
-                os.remove(database_name)
-            except Exception:
-                logger.info("not going to remove database. file does not exist")
-
         # control when to create the header of the database tables
         self.doing_first_model_of_summary = True
+        self.have_initials_table = False
+        self.have_finals_table = False
+        self.have_corecollapse_table = False
 
     def _get_list_of_models(self) -> list:
         """List models to summarize
@@ -193,45 +186,43 @@ class MESAbinaryGrid(object):
     def do_summary_info(self, runSummary: MESArun = None) -> None:
         """Write summary of a MESA simulation into database"""
 
-        # create tables if this is the first model in the database
-        if self.doing_first_model_of_summary:
+        # tracking initial conditions ? create table
+        if self.stevdb_dict.get("track_initials") and not self.have_initials_table:
+            create_database(
+                database_filename=self.database_name,
+                table_name=self.stevdb_dict.get("id_for_initials_in_database"),
+                drop_table=self.drop_tables,
+                table_dict=runSummary.Initials,
+            )
+            self.have_initials_table = True
 
-            # tracking initial conditions ? create table
-            if self.stevdb_dict.get("track_initials"):
-                create_database(
-                    database_filename=self.database_name,
-                    table_name=self.stevdb_dict.get("id_for_initials_in_database"),
-                    table_dict=runSummary.Initials,
-                )
+        # tracking final conditions ? create table
+        if self.stevdb_dict.get("track_finals") and not self.have_finals_table:
+            create_database(
+                database_filename=self.database_name,
+                table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+                drop_table=self.drop_tables,
+                table_dict=runSummary.Finals,
+            )
+            self.have_finals_table = True
 
-            # tracking final conditions ? create table
-            if self.stevdb_dict.get("track_finals"):
-                create_database(
-                    database_filename=self.database_name,
-                    table_name=self.stevdb_dict.get("id_for_finals_in_database"),
-                    table_dict=runSummary.Finals,
-                )
-
-            # tracking XRB phase conditions ? create table
-            if self.stevdb_dict.get("track_xrb_phase"):
-                logger.error("`track_xrb_phase` not ready to be used")
-
-            # tracking CE phase conditions ? create table
-            if self.stevdb_dict.get("track_xrb_phase"):
-                logger.error("`track_ce_phase` not ready to be used")
-
-        # patch for cases where Core Collapse data is found after the first model is searched
-        # e.g., in the second simulation under exploration
-        if (
-            not self.doing_first_model_of_summary
-            and self.stevdb_dict.get("track_finals")
-            and "core-collapse" in runSummary.Finals.get("condition")
-        ):
+        # core-collapse table for first model
+        if "core-collapse" in runSummary.Finals.get("condition") and not self.have_corecollapse_table:
             create_database(
                 database_filename=self.database_name,
                 table_name=self.stevdb_dict.get("id_for_core_collapse_in_database"),
+                drop_table=self.drop_tables,
                 table_dict=runSummary.CoreCollapse,
             )
+            self.have_corecollapse_table = True
+
+        # tracking XRB phase conditions ? create table
+        if self.stevdb_dict.get("track_xrb_phase"):
+            logger.error("`track_xrb_phase` not ready to be used")
+
+        # tracking CE phase conditions ? create table
+        if self.stevdb_dict.get("track_xrb_phase"):
+            logger.error("`track_ce_phase` not ready to be used")
 
         # next, insert data into tables, if tracking is enabled
         if self.stevdb_dict.get("track_initials"):
@@ -244,11 +235,17 @@ class MESAbinaryGrid(object):
         # tracking final condition, save to database
         if self.stevdb_dict.get("track_finals"):
             # avoid saving None values in database of Finals
-            if all(runSummary.Finals.values()):
+            insert_run_into_database(
+                database_filename=self.database_name,
+                table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+                table_dict=runSummary.Finals,
+            )
+
+            if "core-collapse" in runSummary.Finals.get("condition"):
                 insert_run_into_database(
                     database_filename=self.database_name,
-                    table_name=self.stevdb_dict.get("id_for_finals_in_database"),
-                    table_dict=runSummary.Finals,
+                    table_name=self.stevdb_dict.get("id_for_core_collapse_in_database"),
+                    table_dict=runSummary.CoreCollapse,
                 )
 
     def do_run_summary(self) -> None:
@@ -269,10 +266,7 @@ class MESAbinaryGrid(object):
             try:
                 Summary = self.run1_summary(run_name=name)
 
-            except NoMESArun:
-                continue
-
-            except NotImplementedError:
+            except (NoMESArun, NotImplementedError):
                 continue
 
             # if no exception was triggered, create database (if needed) and insert data into it
