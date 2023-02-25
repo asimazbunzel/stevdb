@@ -87,10 +87,7 @@ def watch():
                 try:
                     NewSummary = gridManager.run1_summary(run_name=name)
 
-                except NoMESArun:
-                    continue
-
-                except NotImplementedError:
+                except (NoMESArun, NotImplementedError):
                     continue
 
                 # if no exception was triggered, insert data into it
@@ -134,8 +131,8 @@ def start():
         global gridManager
         gridManager = MESAbinaryGrid(
             replace_evolutions=admin_dict.get("replace_evolutions"),
-            database_name=admin_dict.get("database_name"),
-            overwrite_database=admin_dict.get("overwrite_database"),
+            database_name=stevdb_dict.get("database_name"),
+            drop_tables=stevdb_dict.get("drop_tables"),
             template_directory=mesa_dict.get("template_directory"),
             runs_directory=mesa_dict.get("runs_directory"),
             mesa_binary_dict=mesa_dict.get("mesabinary"),

@@ -11,7 +11,9 @@ import numpy as np
 from .logger import logger
 
 
-def create_database(database_filename: str = "", table_name: str = "", table_dict: OrderedDict = OrderedDict()) -> None:
+def create_database(
+    database_filename: str = "", table_name: str = "", drop_table: bool = False, table_dict: OrderedDict = OrderedDict()
+) -> None:
     """Create table in database with the summary of the simulations
 
     Parameters
@@ -25,8 +27,6 @@ def create_database(database_filename: str = "", table_name: str = "", table_dic
     table_dict : `dict`
         Dictionary with the information to be stored in the table of the database
     """
-
-    logger.debug(f" creating database table: {table_name}")
 
     # (tstart) for timing db creation
     tstart = time.time()
@@ -42,11 +42,27 @@ def create_database(database_filename: str = "", table_name: str = "", table_dic
         bool: "INTEGER",
     }
 
-    # create database
-    conn = sqlite3.connect(database_filename)
+    # drop table if asked for
+    if drop_table:
+        logger.debug(f" dropping table: {table_name}")
 
-    # connect to it with a cursor
-    c = conn.cursor()
+        # create connection to the database
+        conn = sqlite3.connect(database_filename)
+
+        # connect to it with a cursor
+        c = conn.cursor()
+
+        # execute drop command
+        cmd = f"DROP TABLE IF EXISTS {table_name};"
+        c.execute(cmd)
+
+        # commit changes
+        conn.commit()
+
+        # close connection
+        conn.close()
+
+    logger.debug(f" creating database table: {table_name}")
 
     cmd = f"CREATE TABLE IF NOT EXISTS {table_name} ("
 
@@ -67,6 +83,12 @@ def create_database(database_filename: str = "", table_name: str = "", table_dic
     # wrap up command with the final parenthesis
     cmd = cmd[:-2]
     cmd += ");"
+
+    # create connection to the database
+    conn = sqlite3.connect(database_filename)
+
+    # connect to it with a cursor
+    c = conn.cursor()
 
     # create table
     c.execute(cmd)
@@ -170,6 +192,8 @@ def load_id_from_database(database_filename: str = "", table_name: str = "", run
 
     if run_id == -1:
         logger.error(f" could not find id for run: {run_name}. setting to -1")
+    else:
+        logger.debug(f"  found run `{run_name}` with id: `{run_id}`")
 
     conn.close()
 
