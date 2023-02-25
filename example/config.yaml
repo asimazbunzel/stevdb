@@ -16,10 +16,10 @@ Admin:
 MESA:
 
   # template_directory: location of MESA source template
-  template_directory: "/home/asimazbunzel/Projects/HMXB-NSBH/data/raw/templates"
+  template_directory: "/home/asimazbunzel/Developments/stevma/example/templates"
 
   # runs_directory: directory with MESA simulations (their output)
-  runs_directory: "/home/asimazbunzel/Projects/HMXB-NSBH/data/raw/runs/"
+  runs_directory: "/home/asimazbunzel/Developments/stevma/example/runs"
 
   # id: identificator for all the simulations. Options are `mesastar` and `mesabinary`
   id: "mesabinary"
@@ -66,14 +66,14 @@ Stevdb:
   # replace_data: whether to re-analyze a stellar evolution and replace it in the database or not
   replace_data: True
 
-  # prune_tables: remove records of all tables
-  prune_tables: True
+  # drop_tables: remove records of all tables
+  drop_tables: True
 
   # database_name: filename of database (created with stevma)
-  database_name: "/home/asimazbunzel/Projects/HMXB-NSBH/hmxb.db"
+  database_name: "/home/asimazbunzel/Developments/stevma/example/example-grid.db"
 
   # history_columns_list: filename with the list of MESA history_column names to save in database
-  history_columns_list : "/home/asimazbunzel/Developments/stevdb/example/history.yaml"
+  history_columns_list : "example/history.yaml"
 
   # track_*: flag for the different phases that the database manager will track
   # id_for_*_in_database: name of the tables in the database with particular phases in the
