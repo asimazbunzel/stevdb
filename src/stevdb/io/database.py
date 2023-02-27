@@ -71,6 +71,10 @@ def create_database(
     # but changing the keys in the star* dicts in order to contain an identificator to the star
     # to which it corresponds
     for key, value in table_dict.items():
+
+        if isinstance(value, np.ndarray):
+            value = float(value)
+
         # sometimes, None values are passed (tipically with Final values). this is an ugly
         # path to avoid errors; # TODO: improve on this
         if value is None:
