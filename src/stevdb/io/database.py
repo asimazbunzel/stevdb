@@ -80,9 +80,12 @@ def create_database(
         else:
             cmd += f"{key} {dtype_map[type(value)]}, "
 
+    # add foreign key for ID
+    cmd += "FOREIGN KEY(id) REFERENCES MESAruns(id));"
+
     # wrap up command with the final parenthesis
-    cmd = cmd[:-2]
-    cmd += ");"
+    # cmd = cmd[:-2]
+    # cmd += ");"
 
     # create connection to the database
     conn = sqlite3.connect(database_filename)
