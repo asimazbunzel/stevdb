@@ -36,6 +36,9 @@ def __signal_handler(signal, frame):
 def end():
     """Stop manager"""
 
+    print()
+    print("manager stopped !")
+
     # time it
     end = time.time()
 
@@ -50,10 +53,16 @@ def watch():
 
     # useful shortcuts
     admin_dict = core.config.get("Admin")
+    track_changes = core.config["Stevdb"].get("track_changes")
 
     # first thing, make a summary of each simulation
     gridManager.do_run_summary()
 
+    # upload database to remote repository for control versioning
+    if track_changes:
+        gridManager.database_control_versioning()
+
+    print("entering watch mode...")
     # keep on going with manager being active
     keep_alive = True
     while keep_alive:
@@ -93,6 +102,10 @@ def watch():
                 # if no exception was triggered, insert data into it
                 else:
                     gridManager.do_summary_info(runSummary=NewSummary)
+
+            # upload database to remote repository for control versioning
+            if track_changes:
+                gridManager.database_control_versioning()
 
         elif len(new_list_of_runs) < len(previous_list_of_runs):
             logger.error("new list of runs is less than earlier. something is VERY WRONG")

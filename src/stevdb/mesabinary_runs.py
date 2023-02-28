@@ -4,6 +4,7 @@ Module that manages a set of MESAbinary simulations
 
 import glob
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -258,7 +259,7 @@ class MESAbinaryGrid(object):
 
             # output a nice progress bar in the terminal
             right_msg = f" {k+1}/{len(self.runs)} done"
-            progress_bar(k, len(self.runs), left_msg="creating summary", right_msg=right_msg)
+            progress_bar(k, len(self.runs) - 1, left_msg="creating summary", right_msg=right_msg)
 
             # get name of MESA run
             name = run.split("/")[-2]
@@ -277,6 +278,75 @@ class MESAbinaryGrid(object):
                 # creating the database header again
                 if self.doing_first_model_of_summary:
                     self.doing_first_model_of_summary = False
+
+        print()
+
+    def database_control_versioning(self, commit_msg: str = "") -> None:
+        """Version control of database to a given URL
+
+        Parameters
+        ----------
+        commit_msg : `str`
+            Message to add in the commit
+        """
+
+        # need path & name of database file
+        p = Path(self.database_name)
+        db_directory = str(p.parent)
+        db_name = str(p.name)
+
+        # first, run `git add {database_name}` command
+        try:
+            p = subprocess.Popen(
+                f"git add {db_name}",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                cwd=db_directory,
+            )
+            stdout, stderr = p.communicate()
+        except Exception:
+            logger.error("could not add database file to git repo")
+            return
+
+        if stderr is None:
+            logger.info("succesfully added database to git repository")
+
+        # next, commit changes to repo
+        if commit_msg == "":
+            commit_msg = "database updated (auto commit message)"
+        try:
+            p = subprocess.Popen(
+                f"git commit -m '{commit_msg}'",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                cwd=db_directory,
+            )
+            stdout, stderr = p.communicate()
+        except Exception:
+            logger.error("could not commit changes to git repo")
+            return
+
+        if stderr is None:
+            logger.info("succesfully commited changes to git repository")
+
+        # finally, push changes to remote repo
+        try:
+            p = subprocess.Popen(
+                "git push origin main",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                shell=True,
+                cwd=db_directory,
+            )
+            stdout, stderr = p.communicate()
+        except Exception:
+            logger.error("could not push changes to git repo")
+            return
+
+        if stderr is None:
+            logger.info("succesfully pushed changes to remote repository")
 
     def __load_history_columns_dict(self, key: str = "") -> dict:
         """Load dictionary with names of MESA history_columns.list to track initial conditions"""

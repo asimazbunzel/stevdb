@@ -72,6 +72,10 @@ Stevdb:
   # database_name: filename of database (created with stevma)
   database_name: "/home/asimazbunzel/Developments/stevma/example/example-grid.db"
 
+  # track_changes: flag to control whether the code pushes changes to a git repo or not
+  #                this only works if `database_name` is located in an actual git repo
+  track_changes: false
+
   # history_columns_list: filename with the list of MESA history_column names to save in database
   history_columns_list : "example/history.yaml"
 
