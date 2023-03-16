@@ -93,3 +93,6 @@ def set_logger():
     logging.config.dictConfig(config)
 
     return _logger
+
+
+logger = set_logger()

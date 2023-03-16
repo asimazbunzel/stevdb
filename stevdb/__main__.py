@@ -9,9 +9,10 @@ import time
 from stevdb import version
 from stevdb.base import Manager
 from stevdb.io import LOG_FILENAME, logger
+from stevdb.mesa import MESAbinaryGrid
 
 
-def __signal_handler(signal, frame):
+def __signal_handler(signal, frame) -> None:
     """Callback for CTRL-C"""
 
     end()
@@ -29,8 +30,74 @@ def end() -> None:
     sys.exit(0)
 
 
+def watch():
+    """Manager will be updated in this loop"""
+
+    # useful shortcuts
+    admin_dict: dict = core.config.get("Admin")
+
+    # first thing, make a summary of each simulation
+    gridManager.do_run_summary()
+
+    # keep on going with manager being active
+    keep_alive: bool = True
+    while keep_alive:
+
+        # get the previous list of runs
+        previous_list_of_runs: list = gridManager.runs
+
+        # wait a while before updating list of runs
+        logger.info(
+            f"manager will now enter into waiting mode for {admin_dict.get('waiting_time_in_sec')} sec"
+        )
+        time.sleep(admin_dict.get("waiting_time_in_sec"))
+
+        # update list of runs and compare to previous one
+        gridManager.update_list_of_models()
+        new_list_of_runs = gridManager.runs
+
+        if len(new_list_of_runs) > len(previous_list_of_runs):
+            logger.info(
+                f"new {len(new_list_of_runs) - len(previous_list_of_runs)} run(s) found ! trying to update database"
+            )
+            # find which elements are new
+            previous_set = set(previous_list_of_runs)
+            new_set = set(new_list_of_runs)
+            unique_runs = new_set.difference(previous_set)
+            logger.info(f"new runs to include into database: {str(unique_runs)}")
+
+            # loop through new runs to append to database using single methods of the MESAbinaryGrid class
+            for run in unique_runs:
+
+                # remove absolute path, get folder name where run is located
+                name = run.split("/")[-2]
+
+                # create summary
+                try:
+                    NewSummary = gridManager.run1_summary(run_name=name)
+
+                except NoMESArun:
+                    continue
+
+                except NotImplementedError:
+                    continue
+
+                # if no exception was triggered, insert data into it
+                else:
+                    gridManager.do_summary_info(runSummary=NewSummary)
+
+        elif len(new_list_of_runs) < len(previous_list_of_runs):
+            logger.error("new list of runs is less than earlier. something is VERY WRONG")
+            keep_alive = False
+
+        else:
+            logger.info("no new runs found ! continue waiting")
+
+
 def start() -> None:
     """Start manager"""
+
+    logger.info("manager started")
 
     # time it
     global start
@@ -47,9 +114,9 @@ def start() -> None:
         end()
 
     # useful shortcuts
-    admin_dict = core.config.get("Admin")
-    mesa_dict = core.config.get("MESA")
-    stevdb_dict = core.config.get("Stevdb")
+    admin_dict: dict = core.config.get("Admin")
+    mesa_dict: dict = core.config.get("MESA")
+    stevdb_dict: dict = core.config.get("Stevdb")
 
     # set up the grid manager
     if mesa_dict.get("id") == "mesabinary":
@@ -57,7 +124,7 @@ def start() -> None:
         gridManager = MESAbinaryGrid(
             replace_evolutions=admin_dict.get("replace_evolutions"),
             database_name=admin_dict.get("database_name"),
-            overwrite_database=admin_dict.get("overwrite_database"),
+            stevma_table_name=admin_dict.get("stevma_table_name"),
             template_directory=mesa_dict.get("template_directory"),
             runs_directory=mesa_dict.get("runs_directory"),
             mesa_binary_dict=mesa_dict.get("mesabinary"),
@@ -94,7 +161,7 @@ def main() -> None:
     start()
 
     # start loop
-    # watch()
+    watch()
 
 
 if __name__ == "__main__":
