@@ -78,9 +78,9 @@ Stevdb:
   # track_*: which phases will the code track
   # id_for_*: identifier that will be the name of the tables inside the database
   track_initials: True
-  id_for_initials_in_database: "MESArunINIT"
+  id_for_initials_in_database: "Initials"
   track_finals: True
-  id_for_finals_in_database: "MESArunCC"
+  id_for_finals_in_database: "Finals"
   track_xrb_phase: False
   id_for_xrb_phase_in_database: ""
   track_ce_phase: False
