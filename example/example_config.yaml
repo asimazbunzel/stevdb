@@ -1,70 +1,82 @@
+# ---
+# Config options for stellar evolution database manager
+# ---
+
+# Administration options
 Admin:
 
-  # whether to re-analyze a stellar evolution and replace it in the database or not
+  # replace_evolutions: flag to re-analyze a stellar evolution model and replace it in the database
   replace_evolutions: False
 
-  # database options
+  # database_name: name of database
   database_name: "/home/asimazbunzel/Developments/stevma/example/example-grid.db"
 
-  # table name with MESA runs from stevma code
+  # stevma_table_name: name of table with MESA runs from STEVMA code
   stevma_table_name: "MESAruns"
 
-  # monitor always on, while waiting `waiting_time_in_sec` before re-analyzing
+  # keep_monitor: set monitor mode as always on
   keep_monitor: True
+  # waiting_time_in_sec: how much time to wait before re-analyzing
   waiting_time_in_sec: 3600
 
+# Specific options for MESA simulations
 MESA:
 
-  # template location
+  # template_directory: template location
   template_directory: "/home/asimazbunzel/Developments/stevma/example/templates"
 
-  # run location
+  # runs_directory: run location
   runs_directory: "/home/asimazbunzel/Developments/stevma/example/runs"
 
-  # id of the grid of simulations. Options are `mesastar` and `mesabinary`
+  # id: identifier of the grid of simulations. Options are `mesastar` and `mesabinary`
   id: "mesabinary"
 
-  # options needed for a summary of a MESAbinary simulation. They are used when the id flag
-  # is equal to "mesabinary"
+  # mesabinary: options needed for a summary of a MESAbinary simulation. They are used when the id
+  #             flag is equal to "mesabinary"
   mesabinary:
 
-    # $MESA_DIR value
+    # mesa_dir: $MESA_DIR value
     mesa_dir: "/home/asimazbunzel/Developments/mesa-r15140"
 
-    # whether MESAbinary evolves two stars or a star and a point-mass
+    # evolve_both_stars: whether MESAbinary evolves two stars or a star and a point-mass
     evolve_both_stars: False
 
-    # MESAbinary and MESAstar output folders
+    # log_directory_*: MESAbinary and MESAstar output folders
     log_directory_binary: "LOGS_binary"
     log_directory_star1: "LOGS1"
     log_directory_star2: ""
 
-    # filenames of MESA output
+    # history_name_*: filenames with MESA output
     history_name_binary: "binary_history.data"
     history_name_star1: "history.data"
     history_name_star2: ""
 
-    # where termination code is stored
+    # termination_*: directory and filename where termination code of a MESAbinary model is stored
     termination_directory: "termination_codes"
     termination_name: "termination_code_star_plus_point_mass"
 
-    # location of the core-collapse information (in case there is)
+    # core_collapse_*: location and files with the core-collapse information  (in case there is)
+    #                  this files are produced by a custom-made core-collapse module, part of a
+    #                  bigger project labelled as `mesabin2dco` (hosted on GitHub)
     core_collapse_directory: "cc_data"
     core_collapse_name_binary: "binary_at_core_collapse.data"
     core_collapse_name_star1: "star_at_core_collapse.data"
     core_collapse_name_star2: ""
 
-  # as the previous options but for the case of id = "mesastar"
+  # mesastar: as the previous options of MESAbinary, but for the case of id = "mesastar"
+  #           NOT READY TO BE USED
   mesastar:
-
+    # skip_summary: dummy flag, not used actually
     skip_summary: True
 
+# Options for the database manager
 Stevdb:
 
-  # filename with the list of MESA history_column names to save in database
+  # history_columns_list: filename with the list of MESA history_column names to save in database
   history_columns_list : "/home/asimazbunzel/Developments/stevdb/example/example_history.yaml"
 
-  # which phases will the code track
+  # track_*: which phases will the code track
+  # id_for_*: identifier that will be the name of the tables inside the database
   track_initials: True
   id_for_initials_in_database: "MESArunINIT"
   track_finals: True
