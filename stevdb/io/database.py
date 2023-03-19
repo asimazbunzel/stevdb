@@ -11,6 +11,13 @@ import numpy as np
 from .logging import logger
 
 
+class Database:
+    """Database driver"""
+
+    def __init__(self):
+        pass
+
+
 def create_database(
     database_filename: str = "", table_name: str = "", table_dict: OrderedDict = OrderedDict()
 ) -> None:
@@ -165,7 +172,7 @@ def get_stevma_run_id(database_filename: str = "", table_name: str = "", run_nam
         Identifier of the run
     """
 
-    # logger.debug(f" getting id from STEVMA created table: `{table_name}`")
+    logger.debug(f" getting id from STEVMA created table: `{table_name}`")
 
     # (tstart) for timing db data insertion
     tstart: float = time.time()
@@ -184,6 +191,59 @@ def get_stevma_run_id(database_filename: str = "", table_name: str = "", run_nam
 
     # (tend) timing of db data insertion
     tend: float = time.time()
-    # logger.debug(f" [elapsed time to retrieve id from database: {tend-tstart:.2f} sec]")
+    logger.debug(f" [elapsed time to retrieve id from database: {tend-tstart:.2f} sec]")
 
     return rows[0][0]
+
+
+def has_final_data(run_id: int = -1, database_filename: str = "", table_name: str = "") -> bool:
+    """Function that checks if run with id = `run_id` is already present in database `table_name`
+
+    Parameters
+    ----------
+    run_id : `int`
+        Identifier of the run
+
+    database_filename : `str`
+        Name of the file with the database
+
+    table_name : `str`
+        Name of the table created with STEVMA
+
+    Returns
+    -------
+    has_data : `bool`
+        Flag for the presence (absence) of final conditions of run in database
+    """
+
+    logger.debug(f" searching for data with id: `{run_id}` of table: `{table_name}`")
+
+    # (tstart) for timing db data insertion
+    tstart: float = time.time()
+
+    has_data: bool = False
+
+    # create database connection
+    conn = sqlite3.connect(database_filename)
+
+    # connect to it with a cursor
+    c = conn.cursor()
+
+    cmd: str = f"SELECT * FROM {table_name} WHERE id == '{run_id}';"
+
+    # execute command
+    try:
+        c.execute(cmd)
+        rows = c.fetchall()
+    except sqlite3.OperationalError:
+        return has_data
+
+    print(rows)
+    sys.exit(1)
+
+    # (tend) timing of db data insertion
+    tend: float = time.time()
+    logger.debug(f" [elapsed time to retrieve id from database: {tend-tstart:.2f} sec]")
+
+    return False
+    # return rows[0][0]
