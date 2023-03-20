@@ -11,16 +11,14 @@ import sys
 import time
 from pathlib import Path
 
-from stevdb.io import (
-    create_database,
-    get_stevma_run_id,
-    insert_run_into_database,
+from stevdb.io import (  # create_database,; get_stevma_run_id,; has_final_data,; insert_run_into_database,
+    Database,
     load_yaml,
     logger,
     progress_bar,
 )
 
-from .model import MESArun, NoMESArun
+from .model import MESArun, MESArunAlreadyPresent, NoMESArun
 
 
 class MESAbinaryGrid:
@@ -60,11 +58,13 @@ class MESAbinaryGrid:
 
         logger.info("setting up MESAbinaryGrid")
 
+        # database controls
         self.replace_evolutions = replace_evolutions
-
         self.database_name = database_name
-
         self.stevma_table_name = stevma_table_name
+
+        # load database as an object
+        self.database = Database(database_name=self.database_name)
 
         self.template_directory = template_directory
         self.runs_directory = runs_directory
@@ -136,14 +136,19 @@ class MESAbinaryGrid:
         logger.debug(f"inspecting run (id): `{run_name}`")
 
         # get id from the table of runs created with stevma (must have)
-        run_id = get_stevma_run_id(
-            database_filename=self.database_name,
-            table_name=self.stevma_table_name,
-            run_name=run_name,
-        )
+        run_id: int = self.database.get_id(table_name=self.stevma_table_name, run_name=run_name)
+
         if run_id == -1:
             logger.info(" id not found in database")
             raise NoMESArun(f"`{run_name}` does not have id found in database")
+
+        # find if data is already present in the tables of the database (apart from stevma one)
+        run_id_has_final_data: bool = self.database.model_present(
+            run_id=run_id,
+            table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+        )
+        if run_id_has_final_data and not self.replace_evolutions:
+            raise MESArunAlreadyPresent(f"`{run_name}` is already present in database")
 
         RunSummary = MESArun(
             run_id=run_id,
@@ -204,18 +209,16 @@ class MESAbinaryGrid:
 
             # tracking initial conditions ? create table
             if self.stevdb_dict.get("track_initials"):
-                create_database(
-                    database_filename=self.database_name,
+                self.database.create_table(
                     table_name=self.stevdb_dict.get("id_for_initials_in_database"),
-                    table_dict=runSummary.Initials,
+                    table_data_dict=runSummary.Initials,
                 )
 
             # tracking final conditions ? create table
             if self.stevdb_dict.get("track_finals"):
-                create_database(
-                    database_filename=self.database_name,
+                self.database.create_table(
                     table_name=self.stevdb_dict.get("id_for_finals_in_database"),
-                    table_dict=runSummary.Finals,
+                    table_data_dict=runSummary.Finals,
                 )
 
             # tracking XRB phase conditions ? create table
@@ -228,21 +231,18 @@ class MESAbinaryGrid:
 
         # next, insert data into tables, if tracking is enabled
         if self.stevdb_dict.get("track_initials"):
-            insert_run_into_database(
-                database_filename=self.database_name,
+            self.database.insert_record(
                 table_name=self.stevdb_dict.get("id_for_initials_in_database"),
-                table_dict=runSummary.Initials,
+                table_data_dict=runSummary.Initials,
             )
 
         # tracking final condition, save to database
         if self.stevdb_dict.get("track_finals"):
             # avoid saving None values in database of Finals
-            if all(runSummary.Finals.values()):
-                insert_run_into_database(
-                    database_filename=self.database_name,
-                    table_name=self.stevdb_dict.get("id_for_finals_in_database"),
-                    table_dict=runSummary.Finals,
-                )
+            self.database.insert_record(
+                table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+                table_data_dict=runSummary.Finals,
+            )
 
     def do_run_summary(self) -> None:
         """Create a summary of runs"""

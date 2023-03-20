@@ -19,6 +19,12 @@ class NoMESArun(Exception):
     pass
 
 
+class MESArunAlreadyPresent(Exception):
+    """Object for cases where a MESA model is already present in database"""
+
+    pass
+
+
 class MESArun:
     """Object matching a single MESA run
 
@@ -442,4 +448,4 @@ class MESArun:
 
         self.Finals = finals
 
-        logger.debug("  final conditions found: {self.Finals}")
+        logger.debug(f"  final conditions found: {self.Finals}")
