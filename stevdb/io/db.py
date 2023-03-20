@@ -99,6 +99,18 @@ class Database:
 
         return run_id
 
+    def update_model_status(
+        self, table_name: str = "", run_name: str = "", status: str = ""
+    ) -> None:
+        """Update status of a MESA model"""
+        logger.debug(f" Database: updating status for model `{run_name}`")
+
+        sql: str = f"UPDATE {table_name} SET status = '{status}' WHERE run_name = '{run_name}';"
+
+        # commit insertion command to SQLITE database
+        self.execute(sql)
+        self.commit()
+
     def model_present(self, run_id: int = -1, table_name: str = "") -> bool:
         """Find if model is present in `table_name`"""
         logger.debug(f" Database: finding model presence with id `{run_id}`")
