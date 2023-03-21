@@ -119,7 +119,7 @@ class MESAbinaryGrid:
         directory_items = glob.glob(f"{self.runs_directory}/*/")
 
         # check if there are files that are named as `inlist*` which would mean that this is
-        # the folder of a single stellar evolution model
+        # the directory of a single stellar evolution model
         regex = re.compile("inlist")
         matches = [string for string in directory_items if re.match(regex, string)]
 

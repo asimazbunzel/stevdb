@@ -55,7 +55,7 @@ class MESAMainNamelists:
                 "star_info_at_cc_filename": "cc_data/star_at_core_collapse.data",
                 "binary_info_at_cc_filename": "cc_data/binary_at_core_collapse.data",
                 "add_kick_id_as_suffix": False,
-                "termination_codes_folder": "termination_codes",
+                "termination_codes_directory": "termination_codes",
             },
         }
 
@@ -131,7 +131,7 @@ def get_mesa_defaults(mesa_dir: Union[str, Path] = "") -> dict:
     Parameters
     ----------
     mesa_dir : `str / Path`
-        Path to MESA source folder. also found in shell as MESA_DIR environment variable
+        Path to MESA source directory. also found in shell as MESA_DIR environment variable
 
     Returns
     -------
@@ -160,19 +160,19 @@ def get_mesa_defaults(mesa_dir: Union[str, Path] = "") -> dict:
 
     else:
         for namelist in mesaNamelists.star_namelists:
-            # check for proper folder name
-            folder_name = "star"
+            # check for proper directory name
+            directory_name = "star"
             if "eos" in namelist:
-                folder_name = "eos"
+                directory_name = "eos"
             if "kap" in namelist:
-                folder_name = "kap"
+                directory_name = "kap"
 
-            fname = mesa_dir / f"{folder_name}/defaults/{namelist}.defaults"
+            fname = mesa_dir / f"{directory_name}/defaults/{namelist}.defaults"
             MESADefaults[namelist] = namelist_defaults(fname=fname)
 
         for namelist in mesaNamelists.binary_namelists:
-            folder_name = "binary"
-            fname = mesa_dir / f"{folder_name}/defaults/{namelist}.defaults"
+            directory_name = "binary"
+            fname = mesa_dir / f"{directory_name}/defaults/{namelist}.defaults"
             MESADefaults[namelist] = namelist_defaults(fname=fname)
 
     return MESADefaults

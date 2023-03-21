@@ -70,7 +70,7 @@ class MESAmodel:
 
         logger.debug(f"  `model_id`: {self.model_id}")
 
-        # let folders be handled by pathlib module
+        # let directories be handled by pathlib module
         if isinstance(template_directory, str):
             self.template_directory = Path(template_directory)
         else:
