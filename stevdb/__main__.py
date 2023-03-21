@@ -10,6 +10,7 @@ from stevdb import version
 from stevdb.base import Manager
 from stevdb.io import LOG_FILENAME, logger
 from stevdb.mesa import MESAbinaryGrid
+from stevdb.mesa.model import MESAmodelAlreadyPresent, NoMESAmodel
 
 
 def __signal_handler(signal, frame) -> None:
@@ -38,13 +39,11 @@ def watch():
 
     # first thing, make a summary of each simulation
     gridManager.do_run_summary()
+    gridManager.copy_models_list()
 
     # keep on going with manager being active
     keep_alive: bool = True
     while keep_alive:
-
-        # get the previous list of runs
-        previous_list_of_runs: list = gridManager.runs
 
         # wait a while before updating list of runs
         logger.info(
@@ -52,46 +51,41 @@ def watch():
         )
         time.sleep(admin_dict.get("waiting_time_in_sec"))
 
-        # update list of runs and compare to previous one
-        gridManager.update_list_of_models()
-        new_list_of_runs = gridManager.runs
+        need_update = gridManager.need_to_update_database()
+        if need_update:
 
-        if len(new_list_of_runs) > len(previous_list_of_runs):
-            logger.info(
-                f"new {len(new_list_of_runs) - len(previous_list_of_runs)} run(s) found ! trying to update database"
-            )
-            # find which elements are new
-            previous_set = set(previous_list_of_runs)
-            new_set = set(new_list_of_runs)
-            unique_runs = new_set.difference(previous_set)
-            logger.info(f"new runs to include into database: {str(unique_runs)}")
+            # get list of new models
+            new_models = gridManager.new_models_to_append()
+            logger.info(f"new runs to include into database: {str(new_models)}")
 
-            # loop through new runs to append to database using single methods of the MESAbinaryGrid class
-            for run in unique_runs:
+            # loop through new model to append to database using single methods of the MESAbinaryGrid class
+            for model in new_models:
 
-                # remove absolute path, get folder name where run is located
-                name = run.split("/")[-2]
+                # remove absolute path, get directory name where model is located
+                name = model.split("/")[-2]
 
                 # create summary
                 try:
-                    NewSummary = gridManager.run1_summary(run_name=name)
+                    Summary = gridManager.run1_summary(model_name=name)
 
-                except NoMESArun:
-                    continue
+                except (NoMESAmodel, NotImplementedError, MESAmodelAlreadyPresent):
+                    logger.info(
+                        f" either model not found, found but not going to replace or requested "
+                        f"feature not implemented yet: `{name}`"
+                    )
 
                 except NotImplementedError:
                     continue
 
                 # if no exception was triggered, insert data into it
                 else:
-                    gridManager.do_summary_info(runSummary=NewSummary)
+                    gridManager.do_summary_info(modelSummary=Summary)
 
-        elif len(new_list_of_runs) < len(previous_list_of_runs):
-            logger.error("new list of runs is less than earlier. something is VERY WRONG")
-            keep_alive = False
+            # update old with new models
+            gridManager.copy_models_list()
 
         else:
-            logger.info("no new runs found ! continue waiting")
+            logger.info("no new models found ! continue waiting")
 
 
 def start() -> None:
@@ -122,7 +116,7 @@ def start() -> None:
     if mesa_dict.get("id") == "mesabinary":
         global gridManager
         gridManager = MESAbinaryGrid(
-            replace_evolutions=admin_dict.get("replace_models"),
+            replace_models=admin_dict.get("replace_models"),
             database_name=admin_dict.get("database_name"),
             stevma_table_name=admin_dict.get("stevma_table_name"),
             template_directory=mesa_dict.get("template_directory"),
