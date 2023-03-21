@@ -382,9 +382,9 @@ class MESAmodel:
         # store location of run and template as it might be important when looking for profiles
         # as PosixPath is not considered a string, we change it here just to avoid conflicts when
         # saving info into a database
+        initials["model_id"] = self.model_id
         initials["template_directory"] = str(self.template_directory)
         initials["run_root_directory"] = str(self.run_root_directory)
-        initials["model_id"] = self.model_id
         initials["is_binary_evolution"] = self.is_binary_evolution
 
         # search for star conditions
