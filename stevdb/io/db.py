@@ -79,52 +79,59 @@ class Database:
         self.execute(sql)
         self.commit()
 
-    def get_id(self, table_name: str = "", run_name: str = "") -> int:
+    def get_id(self, table_name: str = "", model_name: str = "") -> int:
         """Get identifier of a MESA model
 
         Parameters
         ----------
-        run_name : `str`
+        model_name : `str`
             Name of MESA model
-        """
-        logger.debug(f" Database: getting id for model `{run_name}`")
 
-        run_id = -1
+        Returns
+        -------
+        model_id : `int`
+            Integer identifier of model_name
+        """
+        logger.debug(f" Database: getting id for model `{model_name}`")
+
+        model_id = -1
 
         row = self.fetch(
-            table_name=table_name, column_name="id", constraint=f"run_name = '{run_name}'"
+            table_name=table_name, column_name="id", constraint=f"model_name = '{model_name}'"
         )
         if row[0] is not None:
-            run_id = row[0][0]
+            model_id = row[0][0]
 
-        return run_id
+        return model_id
 
     def update_model_status(
-        self, table_name: str = "", run_name: str = "", status: str = ""
+        self, table_name: str = "", model_name: str = "", status: str = ""
     ) -> None:
         """Update status of a MESA model"""
-        logger.debug(f" Database: updating status for model `{run_name}`")
+        logger.debug(f" Database: updating status for model `{model_name}`")
 
-        sql: str = f"UPDATE {table_name} SET status = '{status}' WHERE run_name = '{run_name}';"
+        sql: str = f"UPDATE {table_name} SET status = '{status}' WHERE model_name = '{model_name}';"
 
         # commit insertion command to SQLITE database
         self.execute(sql)
         self.commit()
 
-    def model_present(self, run_id: int = -1, table_name: str = "") -> bool:
+    def model_present(self, model_id: int = -1, table_name: str = "") -> bool:
         """Find if model is present in `table_name`"""
-        logger.debug(f" Database: finding model presence with id `{run_id}`")
+        logger.debug(f" Database: finding model presence with id `{model_id}`")
 
         has_data: bool = False
 
         try:
             row = self.fetch(
-                table_name=table_name, column_name="*", constraint=f"run_id = {run_id}"
+                table_name=table_name, column_name="*", constraint=f"model_id = {model_id}"
             )
-            has_data = True
+            if len(row) > 0:
+                has_data = True
         except sqlite3.OperationalError:
             pass
 
+        logger.debug(f" Database: model with id `{model_id}` (has_data): {has_data}")
         return has_data
 
     def fetch(self, table_name: str = "", column_name: str = "*", constraint: str = ""):
