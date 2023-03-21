@@ -122,7 +122,7 @@ def start() -> None:
     if mesa_dict.get("id") == "mesabinary":
         global gridManager
         gridManager = MESAbinaryGrid(
-            replace_evolutions=admin_dict.get("replace_evolutions"),
+            replace_evolutions=admin_dict.get("replace_models"),
             database_name=admin_dict.get("database_name"),
             stevma_table_name=admin_dict.get("stevma_table_name"),
             template_directory=mesa_dict.get("template_directory"),

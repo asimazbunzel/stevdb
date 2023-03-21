@@ -5,8 +5,8 @@
 # Administration options
 Admin:
 
-  # replace_evolutions: flag to re-analyze a stellar evolution model and replace it in the database
-  replace_evolutions: False
+  # replace_models: flag to re-analyze a stellar evolution model and replace it in the database
+  replace_models: False
 
   # database_name: name of database
   database_name: "/home/asimazbunzel/Developments/stevma/example/example-grid.db"
@@ -19,7 +19,7 @@ Admin:
   # waiting_time_in_sec: how much time to wait before re-analyzing
   waiting_time_in_sec: 3600
 
-# Specific options for MESA simulations
+# Specific options for MESA models
 MESA:
 
   # template_directory: template location
@@ -31,7 +31,7 @@ MESA:
   # id: identifier of the grid of simulations. Options are `mesastar` and `mesabinary`
   id: "mesabinary"
 
-  # mesabinary: options needed for a summary of a MESAbinary simulation. They are used when the id
+  # mesabinary: options needed for a summary of a MESAbinary model. They are used when the id
   #             flag is equal to "mesabinary"
   mesabinary:
 
@@ -41,7 +41,7 @@ MESA:
     # evolve_both_stars: whether MESAbinary evolves two stars or a star and a point-mass
     evolve_both_stars: False
 
-    # log_directory_*: MESAbinary and MESAstar output folders
+    # log_directory_*: MESAbinary and MESAstar output directories
     log_directory_binary: "LOGS_binary"
     log_directory_star1: "LOGS1"
     log_directory_star2: ""

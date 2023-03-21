@@ -11,12 +11,7 @@ import sys
 import time
 from pathlib import Path
 
-from stevdb.io import (  # create_database,; get_stevma_run_id,; has_final_data,; insert_run_into_database,
-    Database,
-    load_yaml,
-    logger,
-    progress_bar,
-)
+from stevdb.io import Database, load_yaml, logger, progress_bar
 
 from .model import MESArun, MESArunAlreadyPresent, NoMESArun
 
@@ -24,30 +19,37 @@ from .model import MESArun, MESArunAlreadyPresent, NoMESArun
 class MESAbinaryGrid:
     """Class responsible of managing a set of MESAbinary simulations
 
+    It controls the creation of additional tables in a database already created by the STEVMA stellar-evolution manager. These tables contain information regarding different stages in the evolution of isolated binaries from its start (as defined by the MESA code) until its end.
+
+    In particular, it can provide information of a core-collapse happening at the end of the evolution of one star in the binary, as well as the stage in which a compact-object is emitting X-rays due to the release of accretion energy. Moreover, if the binary goes through a common-envelope phase this will also be stored in the database with important quantities during that phase evolution.
+
     Parameters
     ----------
-    replace_evolutions : `bool`
-        Flag that controls the replacing of evolutions in the database
+    replace_models : `bool`
+        Flag that controls the replacing of stellar-evolution models in all the tables of the database
 
-    database_name : `string`
+    database_name : `str`
         Name of the database file
 
+    stevma_table_name : `str`
+        Name of the table inside `database_name` that was created by the STEVMA stellar-evolution manager
+
     template_directory : `str / Path`
-        Location of template folder
+        Location of template directory with the MESA source code specific of the grid of MESAbinary models
 
     runs_directory : `str / Path`
-        Location of runs folder
+        Location of runs directory with the (potential) output of the MESAbinary models
 
     mesa_binary_dict : `dict`
-        TBD
+        Dictionary with options that will be used to make a summary of MESAbinary models. In it, information on the type of models computed and output filenames must be stored (see example file)
 
     stevdb_dict : `dict`
-        TBD
+        Dictionary with options for the making of tables in the database. In general, this dictionary will have which stages will be saved, and the name of the values coming from the MESAbinary models (see example file)
     """
 
     def __init__(
         self,
-        replace_evolutions: bool = False,
+        replace_models: bool = False,
         database_name: str = "",
         stevma_table_name: str = "",
         template_directory: Union[str, Path] = "",
@@ -59,7 +61,7 @@ class MESAbinaryGrid:
         logger.info("setting up MESAbinaryGrid")
 
         # database controls
-        self.replace_evolutions = replace_evolutions
+        self.replace_models = replace_models
         self.database_name = database_name
         self.stevma_table_name = stevma_table_name
 
@@ -147,7 +149,7 @@ class MESAbinaryGrid:
             run_id=run_id,
             table_name=self.stevdb_dict.get("id_for_finals_in_database"),
         )
-        if run_id_has_final_data and not self.replace_evolutions:
+        if run_id_has_final_data and not self.replace_models:
             raise MESArunAlreadyPresent(f"`{run_name}` is already present in database")
 
         RunSummary = MESArun(
@@ -243,6 +245,11 @@ class MESAbinaryGrid:
                 table_name=self.stevdb_dict.get("id_for_finals_in_database"),
                 table_data_dict=runSummary.Finals,
             )
+
+        # change status from STEVMA table
+        self.database.update_model_status(
+            table_name=self.stevma_table_name, run_name=runSummary.run_name, status="completed"
+        )
 
     def do_run_summary(self) -> None:
         """Create a summary of runs"""
