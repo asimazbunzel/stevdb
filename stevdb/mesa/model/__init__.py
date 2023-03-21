@@ -13,48 +13,62 @@ from .defaults import get_mesa_defaults
 from .mesa import MESAdata
 
 
-class NoMESArun(Exception):
-    """Object for case of no MESA run"""
+class NoMESAmodel(Exception):
+    """Object for case of no MESA model"""
 
     pass
 
 
-class MESArunAlreadyPresent(Exception):
+class MESAmodelAlreadyPresent(Exception):
     """Object for cases where a MESA model is already present in database"""
 
     pass
 
 
-class MESArun:
-    """Object matching a single MESA run
+class MESAmodel:
+    """Object matching a single MESA model
 
-    It contains information on the run as well as a summary of important parameters
+    It contains information on the model as well as a summary of important parameters
 
     Parameters
     ----------
+    model_id : `int`
+        Integer identifier coming from database (table created by STEVMA code)
+
     template_directory : `str / Path`
-        Folder location of the template used in the run
+        Directory location of the template used in the run
+
     run_directory : `str / Path`
         The location where the output of MESA is located
-    run_name : `str`
-        Name of the folder where the output of MESA is located
+
+    model_name : `str`
+        Name of the directory where the output of MESA is located
+
+    database_name : `str`
+        Name of database
+
+    is_binary_evolution: `bool`
+        Flag to set/unset binary evolution
+
+    **kwargs : `dict`
+        Misc dictionary with more options
     """
 
     def __init__(
         self,
-        run_id: int = -1,
+        model_id: int = -1,
         template_directory: Union[str, Path] = "",
         run_root_directory: Union[str, Path] = "",
-        run_name: str = "",
+        model_name: str = "",
         is_binary_evolution: bool = True,
         **kwargs,
     ) -> None:
 
         logger.debug(" initializing MESArun")
 
-        self.run_id = run_id
+        self.model_id = model_id
 
-        logger.debug(f"  `run_id`: {self.run_id}")
+        logger.debug(f"  `model_id`: {self.model_id}")
 
         # let folders be handled by pathlib module
         if isinstance(template_directory, str):
@@ -69,9 +83,9 @@ class MESArun:
         logger.debug(f"  `template_directory`: {self.template_directory}")
         logger.debug(f"  `run_root_directory`: {self.run_root_directory}")
 
-        # name of the folder containing the output of MESA
-        self.run_name = run_name
-        logger.debug(f"  `run_name: {self.run_name}")
+        # name of the directory containing the output of MESA
+        self.model_name = model_name
+        logger.debug(f"  `model_name: {self.model_name}")
 
         # flag to know the type of MESA module used in the simulation
         self.is_binary_evolution = is_binary_evolution
@@ -109,7 +123,7 @@ class MESArun:
         self.should_have_termination_file = True
         self.have_termination_file = False
 
-        # location of MESA_DIR install
+        # location of MESA install
         if "mesa_dir" in kwargs.keys():
             self.mesa_dir = kwargs.get("mesa_dir")
         else:
@@ -133,7 +147,7 @@ class MESArun:
         # load MESA default options into a dictionary
         self._MESADefaults = get_mesa_defaults(mesa_dir=self.mesa_dir)
 
-    def _load_MESA_output(self, kwargs):
+    def _load_MESA_output(self, kwargs) -> None:
         """Load MESA output"""
 
         logger.debug(" loading MESA output")
@@ -145,14 +159,15 @@ class MESArun:
             try:
                 fname_binary = (
                     Path(self.run_root_directory)
-                    / Path(self.run_name)
+                    / Path(self.model_name)
                     / Path(log_directory_binary)
                     / Path(history_name_binary)
                 )
             except TypeError:
                 logger.error(
-                    "Need complete path to binary_history filename to load MESA output and some of them are missing. "
-                    "Please check if `log_directory_binary` and `history_name_binary` are set in the configuration file"
+                    "Need complete path to binary_history filename to load MESA output and some "
+                    "of them are missing. Please check if `log_directory_binary` and "
+                    "`history_name_binary` are set in the configuration file"
                 )
                 sys.exit(1)
 
@@ -168,14 +183,15 @@ class MESArun:
             try:
                 fname_star1 = (
                     Path(self.run_root_directory)
-                    / Path(self.run_name)
+                    / Path(self.model_name)
                     / Path(log_directory_star1)
                     / Path(history_name_star1)
                 )
             except TypeError:
                 logger.error(
-                    "Need complete path to (star1) history filename to load MESA output and some of them are missing. "
-                    "Please check if `log_directory_star1` and `history_name_star1` are set in the configuration file"
+                    "Need complete path to (star1) history filename to load MESA output and some "
+                    "of them are missing. Please check if `log_directory_star1` and "
+                    "`history_name_star1` are set in the configuration file"
                 )
                 sys.exit(1)
 
@@ -189,14 +205,15 @@ class MESArun:
             try:
                 fname_star2 = (
                     Path(self.run_root_directory)
-                    / Path(self.run_name)
+                    / Path(self.model_name)
                     / Path(log_directory_star2)
                     / Path(history_name_star2)
                 )
             except TypeError:
                 logger.error(
-                    "Need complete path to (star2) history filename to load MESA output and some of them are missing. "
-                    "Please check if `log_directory_star2` and `history_name_star2` are set in the configuration file"
+                    "Need complete path to (star2) history filename to load MESA output and some "
+                    "of them are missing. Please check if `log_directory_star2` and "
+                    "`history_name_star2` are set in the configuration file"
                 )
                 sys.exit(1)
 
@@ -209,14 +226,15 @@ class MESArun:
         try:
             termination_fname = (
                 Path(self.run_root_directory)
-                / Path(self.run_name)
+                / Path(self.model_name)
                 / Path(termination_directory)
                 / Path(termination_name)
             )
         except TypeError:
             logger.error(
-                "Need complete path to termination filename to load MESA output and some of them are missing. "
-                "Please check if `termination_directory` and `termination_name` are set in the configuration file"
+                "Need complete path to termination filename to load MESA output and some of them "
+                "are missing. Please check if `termination_directory` and `termination_name` are "
+                "set in the configuration file"
             )
             sys.exit(1)
 
@@ -232,14 +250,15 @@ class MESArun:
             try:
                 fname_binary_cc = (
                     Path(self.run_root_directory)
-                    / Path(self.run_name)
+                    / Path(self.model_name)
                     / Path(core_collapse_directory)
                     / Path(core_collapse_name_binary)
                 )
             except TypeError:
                 logger.error(
-                    "Need complete path to (binary) core-collapse filename to load MESA output and some of them are missing. "
-                    "Please check if `core_collapse_directory` and `core_collapse_name_binary` are set in the configuration file"
+                    "Need complete path to (binary) core-collapse filename to load MESA output "
+                    "and some of them are missing. Please check if `core_collapse_directory` and "
+                    "`core_collapse_name_binary` are set in the configuration file"
                 )
                 sys.exit(1)
 
@@ -248,14 +267,15 @@ class MESArun:
             try:
                 fname_star1_cc = (
                     Path(self.run_root_directory)
-                    / Path(self.run_name)
+                    / Path(self.model_name)
                     / Path(core_collapse_directory)
                     / Path(core_collapse_name_star1)
                 )
             except TypeError:
                 logger.error(
-                    "Need complete path to (star1) core-collapse filename to load MESA output and some of them are missing. "
-                    "Please check if `core_collapse_directory` and `core_collapse_name_star1` are set in the configuration file"
+                    "Need complete path to (star1) core-collapse filename to load MESA output "
+                    "and some of them are missing. Please check if `core_collapse_directory` and "
+                    "`core_collapse_name_star1` are set in the configuration file"
                 )
                 sys.exit(1)
 
@@ -264,14 +284,15 @@ class MESArun:
             try:
                 fname_star2_cc = (
                     Path(self.run_root_directory)
-                    / Path(self.run_name)
+                    / Path(self.model_name)
                     / Path(core_collapse_directory)
                     / Path(core_collapse_name_star2)
                 )
             except TypeError:
                 logger.error(
-                    "Need complete path to (star2) core-collapse filename to load MESA output and some of them are missing. "
-                    "Please check if `core_collapse_directory` and `core_collapse_name_star2` are set in the configuration file"
+                    "Need complete path to (star2) core-collapse filename to load MESA output "
+                    "and some of them are missing. Please check if `core_collapse_directory` and "
+                    "`core_collapse_name_star2` are set in the configuration file"
                 )
                 sys.exit(1)
 
@@ -321,7 +342,7 @@ class MESArun:
     def get_termination_code(self) -> None:
         """Set the value of the termination_code string of a MESA simulation"""
 
-        logger.debug(" getting termination condition (code) of MESArun")
+        logger.debug(" getting termination condition (code) of MESAmodel")
 
         if self.have_mesabinary:
             self.termination_code = self._MESAbinaryHistory.termination_code
@@ -334,14 +355,15 @@ class MESArun:
 
         else:
             logger.error(
-                "`have_mesabinary`, `have_mesastar1` and `have_mesastar2` are all false at the same time ! something is not right"
+                "`have_mesabinary`, `have_mesastar1` and `have_mesastar2` are all false at the "
+                "same time ! something is not right"
             )
             sys.exit(1)
 
         logger.debug(f"  termination code found: `{self.termination_code}`")
 
     def get_initials(self, history_columns_dict: dict = {}) -> None:
-        """Get initial conditions of a MESA run
+        """Get initial conditions of a MESA model
 
         Parameters
         ----------
@@ -349,7 +371,7 @@ class MESArun:
             Dictionary with the MESA column names to search for initial conditions
         """
 
-        logger.debug(" getting initial conditions of MESArun")
+        logger.debug(" getting initial conditions of MESAmodel")
 
         if "star" not in history_columns_dict and "binary" not in history_columns_dict:
             logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
@@ -362,7 +384,7 @@ class MESArun:
         # saving info into a database
         initials["template_directory"] = str(self.template_directory)
         initials["run_root_directory"] = str(self.run_root_directory)
-        initials["run_name"] = self.run_name
+        initials["model_id"] = self.model_id
         initials["is_binary_evolution"] = self.is_binary_evolution
 
         # search for star conditions
@@ -400,15 +422,16 @@ class MESArun:
         logger.debug(f"  initial conditions found: {self.Initials}")
 
     def get_finals(self, history_columns_dict: dict = {}) -> None:
-        """Get final conditions of a MESA run
+        """Get final conditions of a MESA model
 
         Parameters
         ----------
         history_columns_list : `dict`
-            Dictionary with the core-collapse (custom MESA module) column names to search for final conditions
+            Dictionary with the core-collapse (custom MESA module) column names to search for
+            final conditions
         """
 
-        logger.debug(" getting final conditions of MESArun")
+        logger.debug(" getting final conditions of MESAmodel")
 
         if "star" not in history_columns_dict and "binary" not in history_columns_dict:
             logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
@@ -417,7 +440,7 @@ class MESArun:
         finals = dict()
 
         # need run_name when saving Final values
-        finals["run_name"] = self.run_name
+        finals["model_id"] = self.model_id
 
         # search for star conditions
         if "star" in history_columns_dict:
