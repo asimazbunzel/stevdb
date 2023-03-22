@@ -90,9 +90,8 @@ class MESAbinaryGrid:
         self.stevdb_dict = stevdb_dict
 
         # list of models inside self.runs_directory
-        self.models_old = list()
         self.models = self._get_list_of_models()
-        self.updated_models = False
+        self.models_in_db = list()
 
         # controls when to create the header of the database tables
         self.doing_first_model_of_summary = True
@@ -144,6 +143,11 @@ class MESAbinaryGrid:
 
         self.models = self._get_list_of_models()
 
+    def append_model_to_list_of_models_in_db(self, model_name: str = "") -> None:
+        """Update list of models already summarized"""
+
+        self.models_in_db.append(model_name)
+
     def run1_summary(self, model_name: str = "") -> MESAmodel:
         """Create single MESAbinary model summary
 
@@ -184,6 +188,8 @@ class MESAbinaryGrid:
             template_directory=self.template_directory,
             run_root_directory=self.runs_directory,
             model_name=model_name,
+            insert_in_database=True,
+            update_in_database=False,
             database_name=self.database_name,
             is_binary_evolution=True,
             **self.mesa_binary_dict,
@@ -227,6 +233,11 @@ class MESAbinaryGrid:
         if self.stevdb_dict.get("track_ce_phase"):
             raise NotImplementedError("`track_ce_phase` is not ready to be used")
 
+        # this controls whether the sqlite command is an insert or an update
+        if model_has_final_data:
+            modelSummary.update_in_database = True
+            modelSummary.insert_in_database = False
+
         # (tend) to control loading and processing time
         _endTime = time.time()
         logger.debug(f" [loading and processing time of MESA run: {_endTime-_startTime:.2f} sec]")
@@ -263,18 +274,31 @@ class MESAbinaryGrid:
 
         # next, insert data into tables, if tracking is enabled
         if self.stevdb_dict.get("track_initials"):
-            self.database.insert_record(
-                table_name=self.stevdb_dict.get("id_for_initials_in_database"),
-                table_data_dict=modelSummary.Initials,
-            )
+            if modelSummary.insert_in_database:
+                self.database.insert_record(
+                    table_name=self.stevdb_dict.get("id_for_initials_in_database"),
+                    table_data_dict=modelSummary.Initials,
+                )
+            else:
+                self.database.update_record(
+                    table_name=self.stevdb_dict.get("id_for_initials_in_database"),
+                    table_data_dict=modelSummary.Initials,
+                    model_id=modelSummary.model_id,
+                )
 
         # tracking final condition, save to database
         if self.stevdb_dict.get("track_finals"):
-            # avoid saving None values in database of Finals
-            self.database.insert_record(
-                table_name=self.stevdb_dict.get("id_for_finals_in_database"),
-                table_data_dict=modelSummary.Finals,
-            )
+            if modelSummary.insert_in_database:
+                self.database.insert_record(
+                    table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+                    table_data_dict=modelSummary.Finals,
+                )
+            else:
+                self.database.update_record(
+                    table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+                    table_data_dict=modelSummary.Finals,
+                    model_id=modelSummary.model_id,
+                )
 
         # change status from STEVMA table
         self.database.update_model_status(
@@ -293,7 +317,7 @@ class MESAbinaryGrid:
 
             # output a nice progress bar in the terminal
             right_msg = f" {k+1}/{len(self.models)} done"
-            progress_bar(k + 1, len(self.models), left_msg="creating summary", right_msg=right_msg)
+            progress_bar(k + 1, len(self.models), left_msg="summary progress", right_msg=right_msg)
 
             # get name of MESA model
             name = model.split("/")[-2]
@@ -313,29 +337,27 @@ class MESAbinaryGrid:
 
                 self.do_summary_info(modelSummary=Summary)
 
+                self.append_model_to_list_of_models_in_db(model_name=model)
+
                 # before the end of the first evaluation in the for-loop, we set this flag to False
                 # in order to avoid creating the database header again
                 if self.doing_first_model_of_summary:
                     self.doing_first_model_of_summary = False
 
-        # once out of main loop, set flag to false to update while on watch
-        self.updated_models = True
-
-    def copy_models_list(self) -> None:
-        """Utility method to copy models to models_old (lists)"""
-        self.models_old = self.models
+        print()
 
     def need_to_update_database(self) -> bool:
         """Utility method to know if there is a new model to append into database tables"""
+
         need_update = False
 
         # new list of models (self.models updated)
         self.update_list_of_models()
 
-        if len(self.models) > len(self.models_old):
+        if len(self.models) > len(self.models_in_db):
             need_update = True
 
-        elif len(self.models) < len(self.models_old):
+        elif len(self.models) < len(self.models_in_db):
             logger.critical("new list of runs is less than earlier. something is VERY WRONG")
             sys.exit(1)
 
@@ -348,8 +370,9 @@ class MESAbinaryGrid:
         -------
         List with new models to append
         """
+
         # find which elements are new
-        previous_set = set(self.models_old)
+        previous_set = set(self.models_in_db)
         new_set = set(self.models)
         unique_models = new_set.difference(previous_set)
 
@@ -368,4 +391,5 @@ class MESAbinaryGrid:
         -------
         Dictionary with valid output of a MESA history_columns.list file
         """
+
         return load_yaml(fname=self.stevdb_dict.get("history_columns_list")).get(key)

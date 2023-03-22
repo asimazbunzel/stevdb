@@ -22,10 +22,12 @@ def __signal_handler(signal, frame) -> None:
 def end() -> None:
     """Stop manager"""
 
-    # time it
-    end = time.time()
+    print("shutting down")
 
-    logger.info(f"[-- manager uptime: {end - start:.2f} sec --]")
+    # time it
+    _endTime = time.time()
+
+    logger.info(f"[-- manager uptime: {_endTime - _startTime:.2f} sec --]")
     logger.info("manager stopped")
 
     sys.exit(0)
@@ -39,9 +41,10 @@ def watch():
 
     # first thing, make a summary of each simulation
     gridManager.do_run_summary()
-    gridManager.copy_models_list()
+    # gridManager.copy_models_list()
 
     # keep on going with manager being active
+    print("STEVDB in watch mode", end="...", flush=True)
     keep_alive: bool = True
     while keep_alive:
 
@@ -81,8 +84,7 @@ def watch():
                 else:
                     gridManager.do_summary_info(modelSummary=Summary)
 
-            # update old with new models
-            gridManager.copy_models_list()
+                    gridManager.append_model_to_list_of_models_in_db(model_name=model)
 
         else:
             logger.info("no new models found ! continue waiting")
@@ -94,8 +96,8 @@ def start() -> None:
     logger.info("manager started")
 
     # time it
-    global start
-    start = time.time()
+    global _startTime
+    _startTime = time.time()
 
     # if only want to print database name and exit
     if core.args.log_fname:
