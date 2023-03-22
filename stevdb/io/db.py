@@ -56,14 +56,17 @@ class Database:
         self.commit()
 
     def insert_record(
-        self, table_name: str = "", table_data_dict: OrderedDict = OrderedDict()
+        self,
+        table_name: str = "",
+        table_data_dict: OrderedDict = OrderedDict(),
     ) -> None:
+
         logger.debug(f" Database: inserting record into table `{table_name}`")
+
+        # append row depending on the type of the value
         sql: str = f"INSERT INTO {table_name}"
         sql_column_names: str = "("
         sql_column_values: str = "("
-
-        # append row depending on the type of the value
         for key, value in table_data_dict.items():
             if isinstance(value, str):
                 sql_column_names += f"{key}, "
@@ -74,6 +77,30 @@ class Database:
 
         # write row to MESArun database
         sql: str = f"{sql} {sql_column_names[:-2]}) VALUES {sql_column_values[:-2]})"
+
+        # commit insertion command to SQLITE database
+        self.execute(sql)
+        self.commit()
+
+    def update_record(
+        self,
+        table_name: str = "",
+        table_data_dict: OrderedDict = OrderedDict(),
+        model_id: int = -1,
+    ) -> None:
+
+        logger.debug(f" Database: updating record into table `{table_name}`")
+
+        # append row depending on the type of the value
+        sql: str = f"UPDATE {table_name} SET "
+        for key, value in table_data_dict.items():
+            if isinstance(value, str):
+                sql += f"{key} = '{value}', "
+            else:
+                sql += f"{key} = {value}, "
+
+        # write row to MESArun database
+        sql = f"{sql[:-2]} WHERE model_id = {model_id};"
 
         # commit insertion command to SQLITE database
         self.execute(sql)
