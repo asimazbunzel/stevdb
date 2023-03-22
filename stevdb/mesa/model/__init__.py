@@ -44,8 +44,8 @@ class MESAmodel:
     model_name : `str`
         Name of the directory where the output of MESA is located
 
-    database_name : `str`
-        Name of database
+    write_to_database : `bool`
+        Flag to write model into database tables
 
     is_binary_evolution: `bool`
         Flag to set/unset binary evolution
@@ -60,6 +60,8 @@ class MESAmodel:
         template_directory: Union[str, Path] = "",
         run_root_directory: Union[str, Path] = "",
         model_name: str = "",
+        insert_in_database: bool = True,
+        update_in_database: bool = False,
         is_binary_evolution: bool = True,
         **kwargs,
     ) -> None:
@@ -86,6 +88,11 @@ class MESAmodel:
         # name of the directory containing the output of MESA
         self.model_name = model_name
         logger.debug(f"  `model_name: {self.model_name}")
+
+        # whether to insert of update information on database. this is used outside of this module
+        # (see mesabinary module)
+        self.insert_in_database = insert_in_database
+        self.update_in_database = update_in_database
 
         # flag to know the type of MESA module used in the simulation
         self.is_binary_evolution = is_binary_evolution
