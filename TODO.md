@@ -2,7 +2,7 @@
 This is important when, for example, the final location of the simulations matches their original
 directory (should be with some list inside the MESAbinaryGrid class)
 
-- [ ] change `evolution(s)`, `run(s)` and `simulation(s)` for `model(s)` as the MESA code produces
+- [x] change `evolution(s)`, `run(s)` and `simulation(s)` for `model(s)` as the MESA code produces
 stellar-evolution models
 
 - [x] change `folder(s)` for `directory(ies)`
