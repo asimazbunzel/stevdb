@@ -9,7 +9,7 @@ version = "0.1.0"
 description = "Database manager of binary stellar-evolutions"
 readme = "README.md"
 authors = ["asimazbunzel <asimazbunzel@iar.unlp.edu.ar>"]
-license = "MIT"
+license = "GNU GPL v2.1"
 repository = "https://github.com/asimazbunzel/stevdb"
 homepage = "https://github.com/asimazbunzel/stevdb"
 
