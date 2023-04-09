@@ -1,5 +1,7 @@
 """Driver for the database of stellar models"""
 
+from typing import Any
+
 import argparse
 import sys
 from pathlib import Path
@@ -126,7 +128,7 @@ class Manager:
 
         return args
 
-    def load_config_file(self) -> dict:
+    def load_config_file(self) -> Any:
         """Load configuration file with options for the manager
 
         Returns
