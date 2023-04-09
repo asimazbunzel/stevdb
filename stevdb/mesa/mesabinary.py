@@ -2,7 +2,7 @@
 Module that manages a set of MESAbinary simulations
 """
 
-from typing import Union
+from typing import Any, Dict, List, Set, Union
 
 import glob
 import os
@@ -67,8 +67,8 @@ class MESAbinaryGrid:
         stevma_table_name: str = "",
         template_directory: Union[str, Path] = "",
         runs_directory: Union[str, Path] = "",
-        mesa_binary_dict: dict = {},
-        stevdb_dict: dict = {},
+        mesa_binary_dict: Dict[Any, Any] = {},
+        stevdb_dict: Dict[Any, Any] = {},
     ) -> None:
 
         logger.info("setting up MESAbinaryGrid")
@@ -91,12 +91,12 @@ class MESAbinaryGrid:
 
         # list of models inside self.runs_directory
         self.models = self._get_list_of_models()
-        self.models_in_db = list()
+        self.models_in_db: List[str] = list()
 
         # controls when to create the header of the database tables
         self.doing_first_model_of_summary = True
 
-    def _get_list_of_models(self) -> list:
+    def _get_list_of_models(self) -> List[Union[str, Path]]:
         """List all the models to (potentially) be summarized
 
         Method that checks for the number of models to make a summary and returns the complete
@@ -177,7 +177,7 @@ class MESAbinaryGrid:
         # find if data is already present in the tables of the database (apart from stevma one)
         model_has_final_data: bool = self.database.model_present(
             model_id=model_id,
-            table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+            table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
         )
 
         if model_has_final_data and not self.replace_models:
@@ -244,7 +244,7 @@ class MESAbinaryGrid:
 
         return modelSummary
 
-    def do_summary_info(self, modelSummary: MESAmodel = None) -> None:
+    def do_summary_info(self, modelSummary: MESAmodel = None) -> None:  # type: ignore
         """Write summary of a MESA model into database"""
 
         # create tables if this is the first model in the database
@@ -253,14 +253,14 @@ class MESAbinaryGrid:
             # tracking initial conditions ? create table
             if self.stevdb_dict.get("track_initials"):
                 self.database.create_table(
-                    table_name=self.stevdb_dict.get("id_for_initials_in_database"),
+                    table_name=str(self.stevdb_dict.get("id_for_initials_in_database")),
                     table_data_dict=modelSummary.Initials,
                 )
 
             # tracking final conditions ? create table
             if self.stevdb_dict.get("track_finals"):
                 self.database.create_table(
-                    table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+                    table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
                     table_data_dict=modelSummary.Finals,
                 )
 
@@ -276,12 +276,12 @@ class MESAbinaryGrid:
         if self.stevdb_dict.get("track_initials"):
             if modelSummary.insert_in_database:
                 self.database.insert_record(
-                    table_name=self.stevdb_dict.get("id_for_initials_in_database"),
+                    table_name=str(self.stevdb_dict.get("id_for_initials_in_database")),
                     table_data_dict=modelSummary.Initials,
                 )
             else:
                 self.database.update_record(
-                    table_name=self.stevdb_dict.get("id_for_initials_in_database"),
+                    table_name=str(self.stevdb_dict.get("id_for_initials_in_database")),
                     table_data_dict=modelSummary.Initials,
                     model_id=modelSummary.model_id,
                 )
@@ -290,19 +290,19 @@ class MESAbinaryGrid:
         if self.stevdb_dict.get("track_finals"):
             if modelSummary.insert_in_database:
                 self.database.insert_record(
-                    table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+                    table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
                     table_data_dict=modelSummary.Finals,
                 )
             else:
                 self.database.update_record(
-                    table_name=self.stevdb_dict.get("id_for_finals_in_database"),
+                    table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
                     table_data_dict=modelSummary.Finals,
                     model_id=modelSummary.model_id,
                 )
 
         # change status from STEVMA table
         self.database.update_model_status(
-            table_name=self.stevma_table_name,
+            table_name=str(self.stevma_table_name),
             model_name=modelSummary.model_name,
             status="completed",
         )
@@ -320,7 +320,7 @@ class MESAbinaryGrid:
             progress_bar(k + 1, len(self.models), left_msg="summary progress", right_msg=right_msg)
 
             # get name of MESA model
-            name = model.split("/")[-2]
+            name = str(model).split("/")[-2]
 
             try:
                 Summary = self.run1_summary(model_name=name)
@@ -337,7 +337,7 @@ class MESAbinaryGrid:
 
                 self.do_summary_info(modelSummary=Summary)
 
-                self.append_model_to_list_of_models_in_db(model_name=model)
+                self.append_model_to_list_of_models_in_db(model_name=str(model))
 
                 # before the end of the first evaluation in the for-loop, we set this flag to False
                 # in order to avoid creating the database header again
@@ -363,7 +363,7 @@ class MESAbinaryGrid:
 
         return need_update
 
-    def new_models_to_append(self) -> list:
+    def new_models_to_append(self) -> Set[Union[str, Path]]:
         """Get new models to append to database
 
         Returns
@@ -378,7 +378,7 @@ class MESAbinaryGrid:
 
         return unique_models
 
-    def __load_history_columns_dict(self, key: str = "") -> dict:
+    def __load_history_columns_dict(self, key: str = "") -> Any:
         """Load dictionary with names of MESA history_columns.list to track initial conditions
 
         Parameters
@@ -392,4 +392,4 @@ class MESAbinaryGrid:
         Dictionary with valid output of a MESA history_columns.list file
         """
 
-        return load_yaml(fname=self.stevdb_dict.get("history_columns_list")).get(key)
+        return load_yaml(fname=str(self.stevdb_dict.get("history_columns_list"))).get(key)

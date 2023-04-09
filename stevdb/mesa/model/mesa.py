@@ -19,7 +19,7 @@ class AttributeMapper:
     Idea from pandas DataFrame obj
     """
 
-    def __init__(self, obj) -> None:
+    def __init__(self, obj) -> None:  # type: ignore
         self.__dict__["data"] = obj
 
     def __getattr__(self, attr):
@@ -116,7 +116,7 @@ class MESAdata:
         if is_gz:
             file = gzip.open(gz_fname, "rb")
         else:
-            file = open(self.history_name)
+            file = open(self.history_name)  # type: ignore
 
         # First line is not used
         file.readline()
@@ -125,13 +125,13 @@ class MESAdata:
         if is_gz:
             header_names = [name.decode("utf8") for name in file.readline().strip().split()]
         else:
-            header_names = file.readline().strip().split()
+            header_names = file.readline().strip().split()  # type: ignore
 
         # After that are header names values
         if is_gz:
             header_values = [val.decode("utf8") for val in file.readline().strip().split()]
         else:
-            header_values = [val for val in file.readline().strip().split()]
+            header_values = [val for val in file.readline().strip().split()]  # type: ignore
 
         for i, name in enumerate(header_names):
             self.header[name] = header_values[i]
@@ -146,7 +146,7 @@ class MESAdata:
             col_names = [name.decode("utf8") for name in tmp_col_names]
 
         else:
-            col_names = file.readline().strip().split()
+            col_names = file.readline().strip().split()  # type: ignore
 
         # close file
         file.close()
@@ -207,7 +207,7 @@ class MESAdata:
                     try:
                         value = float(line.split(" ")[-1])
                     except ValueError:
-                        value = str(line.split(" ")[-1])
+                        value = str(line.split(" ")[-1])  # type: ignore
 
                     self.data_cc[name] = value
 

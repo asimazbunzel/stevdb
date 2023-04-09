@@ -1,7 +1,7 @@
 """Module driver to make a summary of a MESA simulation
 """
 
-from typing import Union
+from typing import Any, Dict, Union
 
 import os
 import sys
@@ -54,7 +54,7 @@ class MESAmodel:
         Misc dictionary with more options
     """
 
-    def __init__(
+    def __init__(  # type: ignore
         self,
         model_id: int = -1,
         template_directory: Union[str, Path] = "",
@@ -152,17 +152,17 @@ class MESAmodel:
         self._load_MESA_output(kwargs)
 
         # load MESA default options into a dictionary
-        self._MESADefaults = get_mesa_defaults(mesa_dir=self.mesa_dir)
+        self._MESADefaults = get_mesa_defaults(mesa_dir=self.mesa_dir)  # type: ignore
 
-    def _load_MESA_output(self, kwargs) -> None:
+    def _load_MESA_output(self, kwargs: Dict[Any, Any]) -> None:
         """Load MESA output"""
 
         logger.debug(" loading MESA output")
 
         # depending on the type of run, load specific MESAstar/binary output
         if self.should_have_mesabinary:
-            log_directory_binary = kwargs.get("log_directory_binary")
-            history_name_binary = kwargs.get("history_name_binary")
+            log_directory_binary: str = str(kwargs.get("log_directory_binary"))
+            history_name_binary: str = str(kwargs.get("history_name_binary"))
             try:
                 fname_binary = (
                     Path(self.run_root_directory)
@@ -185,8 +185,8 @@ class MESAmodel:
 
         # star 1 output
         if self.should_have_mesastar1:
-            log_directory_star1 = kwargs.get("log_directory_star1")
-            history_name_star1 = kwargs.get("history_name_star1")
+            log_directory_star1: str = str(kwargs.get("log_directory_star1"))
+            history_name_star1: str = str(kwargs.get("history_name_star1"))
             try:
                 fname_star1 = (
                     Path(self.run_root_directory)
@@ -207,8 +207,8 @@ class MESAmodel:
 
         # star2 output
         if self.should_have_mesastar2:
-            log_directory_star2 = kwargs.get("log_directory_star2")
-            history_name_star2 = kwargs.get("history_name_star2")
+            log_directory_star2: str = str(kwargs.get("log_directory_star2"))
+            history_name_star2: str = str(kwargs.get("history_name_star2"))
             try:
                 fname_star2 = (
                     Path(self.run_root_directory)
@@ -228,8 +228,8 @@ class MESAmodel:
                 logger.debug(f"  MESA output for star2 does not exist (file: `{str(fname_star2)}`)")
 
         # termination code of the simulation
-        termination_directory = kwargs.get("termination_directory")
-        termination_name = kwargs.get("termination_name")
+        termination_directory = str(kwargs.get("termination_directory"))
+        termination_name = str(kwargs.get("termination_name"))
         try:
             termination_fname = (
                 Path(self.run_root_directory)
@@ -251,9 +251,9 @@ class MESAmodel:
             )
 
         # core-collapse info (in case simulation has reached that stage)
-        core_collapse_directory = kwargs.get("core_collapse_directory")
+        core_collapse_directory: str = str(kwargs.get("core_collapse_directory"))
         if self.should_have_mesabinary:
-            core_collapse_name_binary = kwargs.get("core_collapse_name_binary")
+            core_collapse_name_binary = str(kwargs.get("core_collapse_name_binary"))
             try:
                 fname_binary_cc = (
                     Path(self.run_root_directory)
@@ -270,7 +270,7 @@ class MESAmodel:
                 sys.exit(1)
 
         if self.should_have_mesastar1:
-            core_collapse_name_star1 = kwargs.get("core_collapse_name_star1")
+            core_collapse_name_star1: str = str(kwargs.get("core_collapse_name_star1"))
             try:
                 fname_star1_cc = (
                     Path(self.run_root_directory)
@@ -287,7 +287,7 @@ class MESAmodel:
                 sys.exit(1)
 
         if self.should_have_mesastar2:
-            core_collapse_name_star2 = kwargs.get("core_collapse_name_star2")
+            core_collapse_name_star2: str = str(kwargs.get("core_collapse_name_star2"))
             try:
                 fname_star2_cc = (
                     Path(self.run_root_directory)
@@ -306,41 +306,41 @@ class MESAmodel:
         # load MESAbinary stuff
         if self.should_have_mesabinary:
             try:
-                self._MESAbinaryHistory = MESAdata(
+                self._MESAbinaryHistory = MESAdata(  # type: ignore
                     history_name=fname_binary,
                     termination_name=str(termination_fname),
                     core_collapse_name=fname_binary_cc,
-                    mesa_dir=self.mesa_dir,
+                    mesa_dir=self.mesa_dir,  # type: ignore
                 )
             except FileNotFoundError:
                 pass
         if self.should_have_mesastar1:
             try:
-                self._MESAstar1History = MESAdata(
+                self._MESAstar1History = MESAdata(  # type: ignore
                     history_name=fname_star1,
                     termination_name=str(termination_fname),
                     core_collapse_name=fname_star1_cc,
-                    mesa_dir=self.mesa_dir,
+                    mesa_dir=self.mesa_dir,  # type: ignore
                 )
             except FileNotFoundError:
                 pass
         if self.should_have_mesastar2:
             try:
-                self._MESAstar2History = MESAdata(
+                self._MESAstar2History = MESAdata(  # type: ignore
                     history_name=fname_star2,
                     termination_name=str(termination_fname),
                     core_collapse_name=fname_star2_cc,
-                    mesa_dir=self.mesa_dir,
+                    mesa_dir=self.mesa_dir,  # type: ignore
                 )
             except FileNotFoundError:
                 pass
 
         if self._MESAbinaryHistory is not None:
-            self.have_mesabinary = True
+            self.have_mesabinary = True  # type: ignore
         if self._MESAstar1History is not None:
-            self.have_mesastar1 = True
+            self.have_mesastar1 = True  # type: ignore
         if self._MESAstar2History is not None:
-            self.have_mesastar2 = True
+            self.have_mesastar2 = True  # type: ignore
 
         logger.debug(f"   MESAbinary flags (have): {self.have_mesabinary}")
         logger.debug(f"   MESAstar1 flags (have): {self.have_mesastar1}")
@@ -352,13 +352,13 @@ class MESAmodel:
         logger.debug(" getting termination condition (code) of MESAmodel")
 
         if self.have_mesabinary:
-            self.termination_code = self._MESAbinaryHistory.termination_code
+            self.termination_code = self._MESAbinaryHistory.termination_code  # type: ignore
 
         elif self.have_mesastar1:
-            self.termination_code = self._MESAstar1History.termination_code
+            self.termination_code = self._MESAstar1History.termination_code  # type: ignore
 
         elif self.have_mesastar2:
-            self.termination_code = self._MESAstar2History.termination_code
+            self.termination_code = self._MESAstar2History.termination_code  # type: ignore
 
         else:
             logger.error(
@@ -369,7 +369,7 @@ class MESAmodel:
 
         logger.debug(f"  termination code found: `{self.termination_code}`")
 
-    def get_initials(self, history_columns_dict: dict = {}) -> None:
+    def get_initials(self, history_columns_dict: Dict[Any, Any] = {}) -> None:
         """Get initial conditions of a MESA model
 
         Parameters
@@ -384,7 +384,7 @@ class MESAmodel:
             logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
             sys.exit(1)
 
-        initials = dict()
+        initials: Dict[Any, Any] = dict()
 
         # store location of run and template as it might be important when looking for profiles
         # as PosixPath is not considered a string, we change it here just to avoid conflicts when
@@ -397,38 +397,38 @@ class MESAmodel:
         # search for star conditions
         if "star" in history_columns_dict:
             if self.have_mesastar1:
-                for name in history_columns_dict.get("star"):
+                for name in history_columns_dict.get("star"):  # type: ignore
                     try:
-                        initials[f"{name}_1"] = self._MESAstar1History.get(name)[0]
+                        initials[f"{name}_1"] = self._MESAstar1History.get(name)[0]  # type: ignore
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star1 MESA output")
                     except IndexError:
-                        initials[f"{name}_1"] = self._MESAstar1History.get(name)
+                        initials[f"{name}_1"] = self._MESAstar1History.get(name)  # type: ignore
 
             if self.have_mesastar2:
-                for name in history_columns_dict.get("star"):
+                for name in history_columns_dict.get("star"):  # type: ignore
                     try:
-                        initials[f"{name}_2"] = self._MESAstar2History.get(name)[0]
+                        initials[f"{name}_2"] = self._MESAstar2History.get(name)[0]  # type: ignore
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star2 MESA output")
                     except IndexError:
-                        initials[f"{name}_2"] = self._MESAstar2History.get(name)
+                        initials[f"{name}_2"] = self._MESAstar2History.get(name)  # type: ignore
 
         if "binary" in history_columns_dict:
             if self.have_mesabinary:
-                for name in history_columns_dict.get("binary"):
+                for name in history_columns_dict.get("binary"):  # type: ignore
                     try:
-                        initials[name] = self._MESAbinaryHistory.get(name)[0]
+                        initials[name] = self._MESAbinaryHistory.get(name)[0]  # type: ignore
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in binary MESA output")
                     except IndexError:
-                        initials[name] = self._MESAbinaryHistory.get(name)
+                        initials[name] = self._MESAbinaryHistory.get(name)  # type: ignore
 
         self.Initials = initials
 
         logger.debug(f"  initial conditions found: {self.Initials}")
 
-    def get_finals(self, history_columns_dict: dict = {}) -> None:
+    def get_finals(self, history_columns_dict: Dict[Any, Any] = {}) -> None:
         """Get final conditions of a MESA model
 
         Parameters
@@ -452,29 +452,29 @@ class MESAmodel:
         # search for star conditions
         if "star" in history_columns_dict:
             if self.have_mesastar1:
-                for name in history_columns_dict.get("star"):
+                for name in history_columns_dict.get("star"):  # type: ignore
                     try:
-                        finals[f"{name}_1"] = self._MESAstar1History.get(name)
+                        finals[f"{name}_1"] = self._MESAstar1History.get(name)  # type: ignore
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star1 MESA output")
-                        finals[f"{name}_1"] = None
+                        finals[f"{name}_1"] = None  # type: ignore
 
             if self.have_mesastar2:
-                for name in history_columns_dict.get("star"):
+                for name in history_columns_dict.get("star"):  # type: ignore
                     try:
-                        finals[f"{name}_2"] = self._MESAstar2History.get(name)
+                        finals[f"{name}_2"] = self._MESAstar2History.get(name)  # type: ignore
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in star2 MESA output")
-                        finals[f"{name}_2"] = None
+                        finals[f"{name}_2"] = None  # type: ignore
 
         if "binary" in history_columns_dict:
             if self.have_mesabinary:
-                for name in history_columns_dict.get("binary"):
+                for name in history_columns_dict.get("binary"):  # type: ignore
                     try:
-                        finals[name] = self._MESAbinaryHistory.get(name)
+                        finals[name] = self._MESAbinaryHistory.get(name)  # type: ignore
                     except KeyError:
                         logger.debug(f"   could not find `{name}` in binary MESA output")
-                        finals[name] = None
+                        finals[name] = None  # type: ignore
 
         self.Finals = finals
 

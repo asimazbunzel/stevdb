@@ -1,7 +1,7 @@
 """Utility functions for MESA output
 """
 
-from typing import Union
+from typing import Any, List, Union
 
 import numpy as np
 
@@ -17,8 +17,8 @@ eta = 0.1  # efficiency in converting gravitational to radiation energy of accre
 
 
 def P_to_a(
-    period: Union[float, np.ndarray], m1: Union[float, np.ndarray], m2: Union[float, np.ndarray]
-) -> Union[float, np.ndarray]:
+    period: Union[float, np.ndarray], m1: Union[float, np.ndarray], m2: Union[float, np.ndarray]  # type: ignore
+) -> Any:
     """Binary separation from known period
 
     Parameters
@@ -44,8 +44,8 @@ def P_to_a(
 
 
 def a_to_P(
-    separation: Union[float, np.ndarray], m1: Union[float, np.ndarray], m2: Union[float, np.ndarray]
-) -> Union[float, np.ndarray]:
+    separation: Union[float, np.ndarray], m1: Union[float, np.ndarray], m2: Union[float, np.ndarray]  # type: ignore
+) -> Any:
     """Period from known separation
 
     Parameters
@@ -73,7 +73,7 @@ def a_to_P(
     return period / (24e0 * 3600e0)
 
 
-def group_consecutives(vals: list = [], step: int = 1) -> list:
+def group_consecutives(vals: List[int] = [], step: int = 1) -> List[int]:
     """Return list of consecutive lists of numbers from vals (number list)
 
     Parameters
@@ -88,7 +88,7 @@ def group_consecutives(vals: list = [], step: int = 1) -> list:
     result: `array`
         Array with sorted as consecutive numbers, each element in another array
     """
-    run = []
+    run: List[int] = []
     result = [run]
     expect = None
     for v in vals:
@@ -96,7 +96,7 @@ def group_consecutives(vals: list = [], step: int = 1) -> list:
         if (v == expect) or (expect is None):
             run.append(v)
         else:
-            run = [v]
+            run = [v]  # type: ignore
             result.append(run)
         expect = v + step
-    return
+    return run

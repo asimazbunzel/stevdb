@@ -1,7 +1,7 @@
 """Module use to handle a namelists used by MESA
 """
 
-from typing import Union
+from typing import Any, Dict, Tuple, Union
 
 import os
 from collections import OrderedDict
@@ -83,7 +83,7 @@ class MESAMainNamelists:
         }
 
 
-def namelist_defaults(fname: Union[str, Path]) -> dict:
+def namelist_defaults(fname: Union[str, Path]) -> Dict[Any, Any]:
     """Get default options for a certain namelist used by MESA
 
     Parameters
@@ -125,7 +125,7 @@ def namelist_defaults(fname: Union[str, Path]) -> dict:
     return options
 
 
-def get_mesa_defaults(mesa_dir: Union[str, Path] = "") -> dict:
+def get_mesa_defaults(mesa_dir: Union[str, Path] = "") -> Dict[Any, Any]:
     """Obtain all default options of every namelist used by MESA
 
     Parameters

@@ -4,7 +4,7 @@ Different useful mappings
 Contains dictionaries with key-value mappings foir MESA simulations
 """
 
-from typing import Union
+from typing import List, Union
 
 from pathlib import Path
 
@@ -21,7 +21,7 @@ customCodes = (
 )
 
 
-def get_mesa_termination_codes(mesa_dir: Union[str, Path] = "") -> list:
+def get_mesa_termination_codes(mesa_dir: Union[str, Path] = "") -> List[str]:
     """Get termination codes from $MESA_DIR/star/private/star_private_def.f90
 
     Parameters
@@ -35,7 +35,7 @@ def get_mesa_termination_codes(mesa_dir: Union[str, Path] = "") -> list:
         List with termination codes coming from the MESA source code
     """
 
-    codes = list()
+    codes: List[str] = list()
 
     if isinstance(mesa_dir, str):
         mesa_dir = Path(mesa_dir)
