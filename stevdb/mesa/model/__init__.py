@@ -479,3 +479,28 @@ class MESAmodel:
         self.Finals = finals
 
         logger.debug(f"  final conditions found: {self.Finals}")
+
+    def get_xrb_phase(self, history_columns_dict: Dict[Any, Any] = {}) -> None:
+        """Get final conditions of a MESA model
+
+        Parameters
+        ----------
+        history_columns_list : `dict`
+            Dictionary with the core-collapse (custom MESA module) column names to search for
+            final conditions
+        """
+
+        logger.debug(" getting X-ray phase conditions of MESAmodel")
+
+        if "star" not in history_columns_dict and "binary" not in history_columns_dict:
+            logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
+            sys.exit(1)
+
+        xrb = dict()
+
+        # need run_name when saving Final values
+        xrb["model_id"] = self.model_id
+
+        self.XRB = xrb
+
+        logger.debug(f"  X-ray phase conditions found: {self.XRB}")
