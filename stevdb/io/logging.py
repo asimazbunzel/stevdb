@@ -7,9 +7,9 @@ import os
 import tempfile
 from pathlib import Path
 
-from stevdb import __module_name__  # type: ignore
+__module_name__ = "stevdb"
 
-# a really nice way to handle logging: save .log in $HOME/.local/share/bin2dcomngr (if possible)
+# a really nice way to handle logging: save .log in $HOME/.local/share/MODULE-NAME (if possible)
 # else in $HOME/.cache/MODULE-NAME
 if "HOME" in os.environ:
     _XDG_CACHE_HOME = os.path.join(os.environ["HOME"], ".local", "share")
