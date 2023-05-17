@@ -5,7 +5,6 @@ Module that manages a set of MESAbinary simulations
 from typing import Any, Dict, List, Set, Union
 
 import glob
-import os
 import re
 import sys
 import time

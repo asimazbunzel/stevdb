@@ -24,7 +24,7 @@ class Manager:
 
         if self.args.config_fname is None:
             logger.critical(
-                f"`configuration file option cannot be empty (maybe in the future we'll have defaults)`"
+                "`configuration file option cannot be empty (maybe in the future we'll have defaults)`"
             )
             sys.exit(1)
 

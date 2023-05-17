@@ -5,7 +5,6 @@ Database module
 from typing import Any, Dict
 
 import sqlite3
-import time
 from collections import OrderedDict
 
 import numpy as np

@@ -1,7 +1,7 @@
 """Module use to handle a namelists used by MESA
 """
 
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Union
 
 import os
 from collections import OrderedDict

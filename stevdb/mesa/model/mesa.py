@@ -8,8 +8,6 @@ from pathlib import Path
 
 import numpy as np
 
-from stevdb.io import logger
-
 from .mappings import map_termination_code
 
 
