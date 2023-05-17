@@ -17,11 +17,11 @@ pre-commit-install:
 # formatters
 .PHONY: codestyle
 codestyle:
-	pyupgrade --exit-zero-even-if-changed --py37-plus **/*.py
+	# pyupgrade --exit-zero-even-if-changed --py37-plus **/*.py
 	isort --settings-path pyproject.toml ./
 	black --config pyproject.toml ./
 	flake8 ./ --count --select=E9,F63,F7,F82 --show-source --statistics
-	flake8 ./ --count --exit-zero --max-complexity=12 --max-line-length=127 --statistics
+	flake8 ./ --count --exit-zero --max-complexity=50 --max-line-length=127 --statistics
 
 .PHONY: formatting
 formatting: codestyle
