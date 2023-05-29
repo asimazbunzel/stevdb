@@ -29,7 +29,7 @@ dependencies = [
 dynamic = [ "version" ]
 
 [project.scripts]
-db-manager = "stevdb.__init__:main"
+db-manager = "stevdb.__init__:run_manager"
 
 [project.urls]
 homepage = "https://github.com/asimazbunzel/stevdb"
