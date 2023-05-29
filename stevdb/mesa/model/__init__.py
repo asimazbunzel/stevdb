@@ -159,149 +159,77 @@ class MESAmodel:
 
         logger.debug(" loading MESA output")
 
-        # depending on the type of run, load specific MESAstar/binary output
-        if self.should_have_mesabinary:
-            log_directory_binary: str = str(kwargs.get("log_directory_binary"))
-            history_name_binary: str = str(kwargs.get("history_name_binary"))
-            try:
-                fname_binary = (
-                    Path(self.run_root_directory)
-                    / Path(self.model_name)
-                    / Path(log_directory_binary)
-                    / Path(history_name_binary)
-                )
-            except TypeError:
-                logger.error(
-                    "Need complete path to binary_history filename to load MESA output and some "
-                    "of them are missing. Please check if `log_directory_binary` and "
-                    "`history_name_binary` are set in the configuration file"
-                )
-                sys.exit(1)
+        # MESAbinary output
+        log_directory_binary: str = str(kwargs.get("log_directory_binary", "LOGS_binary"))
+        history_name_binary: str = str(kwargs.get("history_name_binary", "binary_history.data"))
+        fname_binary = (
+            Path(self.run_root_directory)
+            / Path(self.model_name)
+            / Path(log_directory_binary)
+            / Path(history_name_binary)
+        )
 
-            if not fname_binary.is_file() and not Path(f"{str(fname_binary)}.gz").is_file():
-                logger.debug(
-                    f"  MESA output for binary does not exist (file: `{str(fname_binary)}`)"
-                )
+        # MESAstar(1) output
+        log_directory_star1: str = str(kwargs.get("log_directory_star1", "LOGS"))
+        history_name_star1: str = str(kwargs.get("history_name_star1", "history.data"))
+        fname_star1 = (
+            Path(self.run_root_directory)
+            / Path(self.model_name)
+            / Path(log_directory_star1)
+            / Path(history_name_star1)
+        )
 
-        # star 1 output
-        if self.should_have_mesastar1:
-            log_directory_star1: str = str(kwargs.get("log_directory_star1"))
-            history_name_star1: str = str(kwargs.get("history_name_star1"))
-            try:
-                fname_star1 = (
-                    Path(self.run_root_directory)
-                    / Path(self.model_name)
-                    / Path(log_directory_star1)
-                    / Path(history_name_star1)
-                )
-            except TypeError:
-                logger.error(
-                    "Need complete path to (star1) history filename to load MESA output and some "
-                    "of them are missing. Please check if `log_directory_star1` and "
-                    "`history_name_star1` are set in the configuration file"
-                )
-                sys.exit(1)
+        # MESAstar(2) output
+        log_directory_star2: str = str(kwargs.get("log_directory_star2", "LOGS2"))
+        history_name_star2: str = str(kwargs.get("history_name_star2", "history.data"))
+        fname_star2 = (
+            Path(self.run_root_directory)
+            / Path(self.model_name)
+            / Path(log_directory_star2)
+            / Path(history_name_star2)
+        )
 
-            if not fname_star1.is_file() and not Path(f"{str(fname_star1)}.gz").is_file():
-                logger.debug(f"  MESA output for star1 does not exist (file: `{str(fname_star1)}`)")
+        # core collapse output (custom module)
+        core_collapse_directory: str = str(kwargs.get("core_collapse_directory", "core_collapse"))
+        core_collapse_name_binary = str(
+            kwargs.get("core_collapse_name_binary", "binary_at_core_collapse.data")
+        )
+        fname_binary_cc = (
+            Path(self.run_root_directory)
+            / Path(self.model_name)
+            / Path(core_collapse_directory)
+            / Path(core_collapse_name_binary)
+        )
 
-        # star2 output
-        if self.should_have_mesastar2:
-            log_directory_star2: str = str(kwargs.get("log_directory_star2"))
-            history_name_star2: str = str(kwargs.get("history_name_star2"))
-            try:
-                fname_star2 = (
-                    Path(self.run_root_directory)
-                    / Path(self.model_name)
-                    / Path(log_directory_star2)
-                    / Path(history_name_star2)
-                )
-            except TypeError:
-                logger.error(
-                    "Need complete path to (star2) history filename to load MESA output and some "
-                    "of them are missing. Please check if `log_directory_star2` and "
-                    "`history_name_star2` are set in the configuration file"
-                )
-                sys.exit(1)
+        core_collapse_name_star1: str = str(
+            kwargs.get("core_collapse_name_star1", "star_at_core_collapse.data")
+        )
+        fname_star1_cc = (
+            Path(self.run_root_directory)
+            / Path(self.model_name)
+            / Path(core_collapse_directory)
+            / Path(core_collapse_name_star1)
+        )
 
-            if not fname_star2.is_file() and not Path(f"{str(fname_star2)}.gz").is_file():
-                logger.debug(f"  MESA output for star2 does not exist (file: `{str(fname_star2)}`)")
+        core_collapse_name_star2: str = str(
+            kwargs.get("core_collapse_name_star2", "star2_at_core_collapse.data")
+        )
+        fname_star2_cc = (
+            Path(self.run_root_directory)
+            / Path(self.model_name)
+            / Path(core_collapse_directory)
+            / Path(core_collapse_name_star2)
+        )
 
         # termination code of the simulation
-        termination_directory = str(kwargs.get("termination_directory"))
-        termination_name = str(kwargs.get("termination_name"))
-        try:
-            termination_fname = (
-                Path(self.run_root_directory)
-                / Path(self.model_name)
-                / Path(termination_directory)
-                / Path(termination_name)
-            )
-        except TypeError:
-            logger.error(
-                "Need complete path to termination filename to load MESA output and some of them "
-                "are missing. Please check if `termination_directory` and `termination_name` are "
-                "set in the configuration file"
-            )
-            sys.exit(1)
-
-        if not termination_fname.is_file():
-            logger.debug(
-                f"  file with termination code does not exist (file: `{str(termination_fname)}`)"
-            )
-
-        # core-collapse info (in case simulation has reached that stage)
-        core_collapse_directory: str = str(kwargs.get("core_collapse_directory"))
-        if self.should_have_mesabinary:
-            core_collapse_name_binary = str(kwargs.get("core_collapse_name_binary"))
-            try:
-                fname_binary_cc = (
-                    Path(self.run_root_directory)
-                    / Path(self.model_name)
-                    / Path(core_collapse_directory)
-                    / Path(core_collapse_name_binary)
-                )
-            except TypeError:
-                logger.error(
-                    "Need complete path to (binary) core-collapse filename to load MESA output "
-                    "and some of them are missing. Please check if `core_collapse_directory` and "
-                    "`core_collapse_name_binary` are set in the configuration file"
-                )
-                sys.exit(1)
-
-        if self.should_have_mesastar1:
-            core_collapse_name_star1: str = str(kwargs.get("core_collapse_name_star1"))
-            try:
-                fname_star1_cc = (
-                    Path(self.run_root_directory)
-                    / Path(self.model_name)
-                    / Path(core_collapse_directory)
-                    / Path(core_collapse_name_star1)
-                )
-            except TypeError:
-                logger.error(
-                    "Need complete path to (star1) core-collapse filename to load MESA output "
-                    "and some of them are missing. Please check if `core_collapse_directory` and "
-                    "`core_collapse_name_star1` are set in the configuration file"
-                )
-                sys.exit(1)
-
-        if self.should_have_mesastar2:
-            core_collapse_name_star2: str = str(kwargs.get("core_collapse_name_star2"))
-            try:
-                fname_star2_cc = (
-                    Path(self.run_root_directory)
-                    / Path(self.model_name)
-                    / Path(core_collapse_directory)
-                    / Path(core_collapse_name_star2)
-                )
-            except TypeError:
-                logger.error(
-                    "Need complete path to (star2) core-collapse filename to load MESA output "
-                    "and some of them are missing. Please check if `core_collapse_directory` and "
-                    "`core_collapse_name_star2` are set in the configuration file"
-                )
-                sys.exit(1)
+        termination_directory = str(kwargs.get("termination_directory", "termination_codes"))
+        termination_name = str(kwargs.get("termination_name", "termination_code"))
+        termination_fname = (
+            Path(self.run_root_directory)
+            / Path(self.model_name)
+            / Path(termination_directory)
+            / Path(termination_name)
+        )
 
         # load MESAbinary stuff
         if self.should_have_mesabinary:
