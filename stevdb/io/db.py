@@ -47,7 +47,10 @@ class Database:
         # but changing the keys in the star* dicts in order to contain an identificator to the star
         # to which it corresponds
         for key, value in table_data_dict.items():
-            sql += f"{key} {self.DTYPE_MAPPER[type(value)]}, "
+            if value is None:
+                sql += f"{key} NULL, "
+            else:
+                sql += f"{key} {self.DTYPE_MAPPER[type(value)]}, "
 
         # wrap up command with the final parenthesis
         sql = sql[:-2]
@@ -146,7 +149,9 @@ class Database:
 
     def model_present(self, model_id: int = -1, table_name: str = "") -> bool:
         """Find if model is present in `table_name`"""
-        logger.debug(f" Database: finding model presence with id `{model_id}`")
+        logger.debug(
+            f" Database: finding model presence with id `{model_id}` in table `{table_name}`"
+        )
 
         has_data: bool = False
 
@@ -159,7 +164,9 @@ class Database:
         except sqlite3.OperationalError:
             pass
 
-        logger.debug(f" Database: model with id `{model_id}` (has_data): {has_data}")
+        logger.debug(
+            f" Database: model with id `{model_id}` in table `{table_name}` (has_data): {has_data}"
+        )
         return has_data
 
     def fetch(self, table_name: str = "", column_name: str = "*", constraint: str = "") -> Any:
