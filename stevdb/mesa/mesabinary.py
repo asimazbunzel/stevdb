@@ -227,6 +227,8 @@ class MESAbinaryGrid:
             modelSummary.get_finals(history_columns_dict=finals_dict)
 
         if self.stevdb_dict.get("track_xrb_phase"):
+            xrb_dict = self.__load_history_columns_dict(key="xrb")
+            modelSummary.get_xrb_phase(history_columns_dict=xrb_dict)
             raise NotImplementedError("`track_xrb_phase` is not ready to used")
 
         if self.stevdb_dict.get("track_ce_phase"):
