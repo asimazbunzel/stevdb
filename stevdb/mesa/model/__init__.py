@@ -7,10 +7,13 @@ import os
 import sys
 from pathlib import Path
 
+import numpy as np
+
 from stevdb.io import logger
 
 from .defaults import get_mesa_defaults
 from .mesa import MESAdata
+from .utils import LX_CUT, Lsun, Msun, clight, km2cm, secyer, standard_cgrav
 
 
 class NoMESAmodel(Exception):
@@ -418,17 +421,56 @@ class MESAmodel:
             final conditions
         """
 
+        def compute_Lbol_acc(is_NS, m2, lg_dot_m2):
+            """Computes bolometric luminosity of accretion"""
+
+            if is_NS:
+                epsilon = 1e0
+                Racc = 10 * km2cm
+            else:
+                epsilon = 0.5
+                Racc = 3 * 2 * m2 * Msun * standard_cgrav
+                Racc /= clight**2
+
+            Lbol_acc = epsilon * m2 * Msun * np.power(10, lg_dot_m2) * Msun / secyer
+            Lbol_acc /= Racc
+
+            return Lbol_acc
+
+        def get_XRB_mask(mod_num, lg_lacc) -> np.ndarray:
+            """Computes a mask to get models where binary is found as an XRB"""
+            Lacc = np.power(10, lg_lacc) * Lsun  # erg s-1
+            model_numbers = np.where(Lacc > LX_CUT, mod_num, np.nan)
+            return model_numbers
+
         logger.debug(" getting X-ray phase conditions of MESAmodel")
 
         if "star" not in history_columns_dict and "binary" not in history_columns_dict:
             logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
             sys.exit(1)
 
+        m2 = self._MESAbinaryHistory.get("star_2_mass")
+        lg_dot_m2 = self._MESAbinaryHistory.get("lg_mstar_dot_2")
+
+        is_NS = True
+        if m2[0] > 2.5:
+            is_NS = False
+
+        lbol = compute_Lbol_acc(is_NS=is_NS, m2=m2, lg_dot_m2=lg_dot_m2)
+
+        print(lbol)
+
         xrb = dict()
 
         # need run_name when saving Final values
         xrb["model_id"] = self.model_id
 
-        self.XRB = xrb
+        model_numbers_xrb = get_XRB_mask(
+            mod_num=self._MESAbinaryHistory.get("model_number"),
+            lg_lacc=np.log10(lbol),
+        )
+        print(model_numbers_xrb)
 
+        self.XRB = xrb
         logger.debug(f"  X-ray phase conditions found: {self.XRB}")
+        sys.exit()
