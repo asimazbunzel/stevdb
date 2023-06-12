@@ -14,6 +14,8 @@ Rsun = 6.9598e10  # solar radius (cm)
 Lsun = 3.828e33  # solar luminosity (erg s^-1)
 R_NS = 10e0 * 1e5  # radius of a NS in cm
 eta = 0.1  # efficiency in converting gravitational to radiation energy of accretion
+LX_CUT = 1e34  # erg s-1
+km2cm = 1e5
 
 
 def P_to_a(
