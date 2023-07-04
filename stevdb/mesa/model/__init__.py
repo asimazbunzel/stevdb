@@ -13,7 +13,7 @@ from stevdb.io import logger
 
 from .defaults import get_mesa_defaults
 from .mesa import MESAdata
-from .utils import LX_CUT, Lsun, Msun, clight, km2cm, secyer, standard_cgrav
+from .utils import LX_CUT, MAX_NS_MASS, R_NS, Lsun, Msun, secyer, standard_cgrav
 
 
 class NoMESAmodel(Exception):
@@ -421,27 +421,36 @@ class MESAmodel:
             final conditions
         """
 
-        def compute_Lbol_acc(is_NS, m2, lg_dot_m2):
-            """Computes bolometric luminosity of accretion"""
+        def compute_accretion_luminosity(macc: np.ndarray, dot_macc: np.ndarray) -> np.ndarray:
+            """Computes bolometric luminosity of accretion
 
-            if is_NS:
-                epsilon = 1e0
-                Racc = 10 * km2cm
-            else:
-                epsilon = 0.5
-                Racc = 3 * 2 * m2 * Msun * standard_cgrav
-                Racc /= clight**2
+            Parameters
+            ----------
+            macc : `np.ndarray`
+                Accretor mass in Msun
 
-            Lbol_acc = epsilon * m2 * Msun * np.power(10, lg_dot_m2) * Msun / secyer
-            Lbol_acc /= Racc
+            dot_macc : `np.ndarray`
+                Accretion rate in Msun yr-1
 
-            return Lbol_acc
+            Returns
+            -------
+            log_Lacc : `np.ndarray`
+                Logarithm of accretion luminosity in Lsun
+            """
 
-        def get_XRB_mask(mod_num, lg_lacc) -> np.ndarray:
+            # some constants
+            Racc = R_NS
+            epsilon = 1.0
+
+            Lacc = epsilon * standard_cgrav * (macc * Msun) * (dot_macc * Msun / secyer) / Racc
+
+            return np.log10(Lacc / Lsun)
+
+        def get_XRB_mask(lg_lacc) -> np.ndarray:
             """Computes a mask to get models where binary is found as an XRB"""
             Lacc = np.power(10, lg_lacc) * Lsun  # erg s-1
-            model_numbers = np.where(Lacc > LX_CUT, mod_num, np.nan)
-            return model_numbers
+            mask = Lacc > LX_CUT
+            return mask
 
         logger.debug(" getting X-ray phase conditions of MESAmodel")
 
@@ -449,28 +458,46 @@ class MESAmodel:
             logger.error("`history_columns_list` must contain either the `star` or `binary` keys")
             sys.exit(1)
 
+        # only compute accretion luminosity when accretor is a NS, using Belczynski formulae
+        # for BHs we use Podsiadlowski one (already in MESA)
         m2 = self._MESAbinaryHistory.get("star_2_mass")
-        lg_dot_m2 = self._MESAbinaryHistory.get("lg_mstar_dot_2")
+        if m2[0] < MAX_NS_MASS:
+            lg_dot_m2 = self._MESAbinaryHistory.get("lg_mstar_dot_2")
+            lg_Lbol = compute_accretion_luminosity(macc=m2, dot_macc=lg_dot_m2)
+        else:
+            lg_Lbol = self._MESAbinaryHistory.get("lg_accretion_luminosity")
 
-        is_NS = True
-        if m2[0] > 2.5:
-            is_NS = False
+        mask = get_XRB_mask(lg_lacc=lg_Lbol)
 
-        lbol = compute_Lbol_acc(is_NS=is_NS, m2=m2, lg_dot_m2=lg_dot_m2)
-
-        print(lbol)
-
+        # store XRB phase into a dict
         xrb = dict()
-
-        # need run_name when saving Final values
         xrb["model_id"] = self.model_id
+        xrb["lg_accretion_luminosity"] = lg_Lbol[mask]
 
-        model_numbers_xrb = get_XRB_mask(
-            mod_num=self._MESAbinaryHistory.get("model_number"),
-            lg_lacc=np.log10(lbol),
-        )
-        print(model_numbers_xrb)
+        # search for star conditions
+        if "star" in history_columns_dict:
+            if self.have_mesastar1:
+                for name in history_columns_dict.get("star"):  # type: ignore
+                    try:
+                        xrb[f"{name}_1"] = self._MESAstar1History.get(name)[mask]  # type: ignore
+                    except Exception:
+                        logger.debug(f"   error while grabbing XRB data of `{name}`")
+
+            if self.have_mesastar2:
+                for name in history_columns_dict.get("star"):  # type: ignore
+                    try:
+                        xrb[f"{name}_2"] = self._MESAstar2History.get(name)[mask]  # type: ignore
+                    except Exception:
+                        logger.debug(f"   error while grabbing XRB data of `{name}`")
+
+        if "binary" in history_columns_dict:
+            if self.have_mesabinary:
+                for name in history_columns_dict.get("binary"):  # type: ignore
+                    try:
+                        xrb[name] = self._MESAbinaryHistory.get(name)[mask]  # type: ignore
+                    except Exception:
+                        logger.debug(f"   error while grabbing XRB data of `{name}`")
 
         self.XRB = xrb
+
         logger.debug(f"  X-ray phase conditions found: {self.XRB}")
-        sys.exit()
