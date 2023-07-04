@@ -16,6 +16,7 @@ R_NS = 10e0 * 1e5  # radius of a NS in cm
 eta = 0.1  # efficiency in converting gravitational to radiation energy of accretion
 LX_CUT = 1e34  # erg s-1
 km2cm = 1e5
+MAX_NS_MASS = 2.5e0
 
 
 def P_to_a(
