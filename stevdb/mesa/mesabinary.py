@@ -94,6 +94,11 @@ class MESAbinaryGrid:
 
         # controls when to create the header of the database tables
         self.doing_first_model_of_summary = True
+        self.create_header_MESAmodels = True
+        self.create_header_Initials = True
+        self.create_header_XRB = True
+        self.create_header_CE = True
+        self.create_header_Finals = True
 
     def _get_list_of_models(self) -> List[Union[str, Path]]:
         """List all the models to (potentially) be summarized
@@ -229,7 +234,6 @@ class MESAbinaryGrid:
         if self.stevdb_dict.get("track_xrb_phase"):
             xrb_dict = self.__load_history_columns_dict(key="xrb")
             modelSummary.get_xrb_phase(history_columns_dict=xrb_dict)
-            raise NotImplementedError("`track_xrb_phase` is not ready to used")
 
         if self.stevdb_dict.get("track_ce_phase"):
             raise NotImplementedError("`track_ce_phase` is not ready to be used")
@@ -248,30 +252,37 @@ class MESAbinaryGrid:
     def do_summary_info(self, modelSummary: MESAmodel = None) -> None:  # type: ignore
         """Write summary of a MESA model into database"""
 
-        # create tables if this is the first model in the database
-        if self.doing_first_model_of_summary:
+        logger.debug(f"inserting into database, model (name): `{modelSummary.model_name}`")
 
-            # tracking initial conditions ? create table
-            if self.stevdb_dict.get("track_initials"):
-                self.database.create_table(
-                    table_name=str(self.stevdb_dict.get("id_for_initials_in_database")),
-                    table_data_dict=modelSummary.Initials,
-                )
+        # tracking initial conditions ? create table
+        if self.create_header_Initials and self.stevdb_dict.get("track_initials"):
+            self.database.create_table(
+                table_name=str(self.stevdb_dict.get("id_for_initials_in_database")),
+                table_data_dict=modelSummary.Initials,
+            )
+            self.create_header_Initials = False
 
-            # tracking final conditions ? create table
-            if self.stevdb_dict.get("track_finals"):
-                self.database.create_table(
-                    table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
-                    table_data_dict=modelSummary.Finals,
-                )
+        # tracking final conditions ? create table
+        if self.create_header_Finals and self.stevdb_dict.get("track_finals"):
+            self.database.create_table(
+                table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
+                table_data_dict=modelSummary.Finals,
+            )
+            self.create_header_Finals = False
 
-            # tracking XRB phase conditions ? create table
-            if self.stevdb_dict.get("track_xrb_phase"):
-                logger.error("`track_xrb_phase` not ready to be used")
+        # tracking XRB phase conditions ? create table
+        if self.create_header_XRB and self.stevdb_dict.get("track_xrb_phase"):
+            self.database.create_table(
+                table_name=str(self.stevdb_dict.get("id_for_xrb_phase_in_database")),
+                table_data_dict=modelSummary.XRB,
+            )
+            self.create_header_XRB = False
 
-            # tracking CE phase conditions ? create table
-            if self.stevdb_dict.get("track_xrb_phase"):
-                logger.error("`track_ce_phase` not ready to be used")
+        # tracking CE phase conditions ? create table
+        if self.create_header_CE and self.stevdb_dict.get("track_ce_phase"):
+            logger.error("`track_ce_phase` not ready to be used")
+
+        sys.exit("debugging")
 
         # next, insert data into tables, if tracking is enabled
         if self.stevdb_dict.get("track_initials"):
@@ -284,6 +295,20 @@ class MESAbinaryGrid:
                 self.database.update_record(
                     table_name=str(self.stevdb_dict.get("id_for_initials_in_database")),
                     table_data_dict=modelSummary.Initials,
+                    model_id=modelSummary.model_id,
+                )
+
+        # track XRB phase conditions, save to database
+        if self.stevdb_dict.get("track_xrb_phase"):
+            if modelSummary.insert_in_database:
+                self.database.insert_record(
+                    table_name=str(self.stevdb_dict.get("id_for_xrb_phase_in_database")),
+                    table_data_dict=modelSummary.XRB,
+                )
+            else:
+                self.database.update_record(
+                    table_name=str(self.stevdb_dict.get("id_for_xrb_phase_in_database")),
+                    table_data_dict=modelSummary.XRB,
                     model_id=modelSummary.model_id,
                 )
 
