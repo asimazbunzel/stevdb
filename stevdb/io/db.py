@@ -69,18 +69,43 @@ class Database:
 
         # append row depending on the type of the value
         sql: str = f"INSERT INTO {table_name}"
-        sql_column_names: str = "("
-        sql_column_values: str = "("
-        for key, value in table_data_dict.items():
-            if isinstance(value, str):
-                sql_column_names += f"{key}, "
-                sql_column_values += f"'{value}', "
-            else:
-                sql_column_names += f"{key}, "
-                sql_column_values += f"{value}, "
+
+        # first, find out if any of the elements in the dictionary is an array
+        # in which case we need to duplicate items which are not arrays (like an id)
+        has_array_elements = False
+        n_elements = 0
+        for element in table_data_dict.values():
+            if isinstance(element, np.ndarray) or isinstance(element, list):
+                has_array_elements = True
+                n_elements = len(element)
+                break
+
+        # get column values
+        sql_columm_values_arry = []
+        if n_elements >= 0:
+            for k in range(n_elements):
+                _str = "("
+                for value in table_data_dict.values():
+                    try:
+                        _str += f"{value[k]}, "
+                    except Exception:
+                        _str += f"{value}, "
+                sql_columm_values_arry.append(f"{_str[:-2]})")
+        else:
+            logger.error("error inserting column into database: number of elements should be >= 0")
+        sql_column_values: str = "VALUES "
+        for value in sql_columm_values_arry:
+            sql_column_values += f"{value}, "
+        sql_column_values = sql_column_values[:-2]
+
+        # now, get column names
+        sql_column_names = "("
+        for key in table_data_dict.keys():
+            sql_column_names += f"{key}, "
+        sql_column_names = f"{sql_column_names[:-2]})"
 
         # write row to MESArun database
-        sql2: str = f"{sql} {sql_column_names[:-2]}) VALUES {sql_column_values[:-2]})"
+        sql2: str = f"{sql} {sql_column_names} {sql_column_values}"
 
         # commit insertion command to SQLITE database
         self.execute(sql2)
