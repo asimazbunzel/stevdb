@@ -282,8 +282,6 @@ class MESAbinaryGrid:
         if self.create_header_CE and self.stevdb_dict.get("track_ce_phase"):
             logger.error("`track_ce_phase` not ready to be used")
 
-        sys.exit("debugging")
-
         # next, insert data into tables, if tracking is enabled
         if self.stevdb_dict.get("track_initials"):
             if modelSummary.insert_in_database:
