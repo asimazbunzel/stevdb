@@ -10,6 +10,8 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
+
 from stevdb.io import Database, load_yaml, logger, progress_bar
 
 from .model import MESAmodel, MESAmodelAlreadyPresent, NoMESAmodel
@@ -179,12 +181,25 @@ class MESAbinaryGrid:
             raise NoMESAmodel(f"`{model_name}` does not have id found in database")
 
         # find if data is already present in the tables of the database (apart from stevma one)
+        model_has_initial_data: bool = self.database.model_present(
+            model_id=model_id,
+            table_name=str(self.stevdb_dict.get("id_for_initials_in_database")),
+        )
+        model_has_xrb_data: bool = self.database.model_present(
+            model_id=model_id,
+            table_name=str(self.stevdb_dict.get("id_for_xrb_phase_in_database")),
+        )
         model_has_final_data: bool = self.database.model_present(
             model_id=model_id,
             table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
         )
 
-        if model_has_final_data and not self.replace_models:
+        if (
+            model_has_initial_data
+            and model_has_final_data
+            and model_has_xrb_data
+            and not self.replace_models
+        ):
             raise MESAmodelAlreadyPresent(f"`{model_name}` is already present in database")
 
         modelSummary = MESAmodel(
@@ -198,6 +213,9 @@ class MESAbinaryGrid:
             is_binary_evolution=True,
             **self.mesa_binary_dict,
         )
+        modelSummary.have_initial_data = model_has_initial_data
+        modelSummary.have_xrb_data = model_has_xrb_data
+        modelSummary.have_final_data = model_has_final_data
 
         # check if simulation has actual MESA output, else do not try to make a summary of them
         if modelSummary.should_have_mesabinary and not modelSummary.have_mesabinary:
@@ -239,7 +257,7 @@ class MESAbinaryGrid:
             raise NotImplementedError("`track_ce_phase` is not ready to be used")
 
         # this controls whether the sqlite command is an insert or an update
-        if model_has_final_data:
+        if False and model_has_final_data:
             modelSummary.update_in_database = True
             modelSummary.insert_in_database = False
 
@@ -284,12 +302,12 @@ class MESAbinaryGrid:
 
         # next, insert data into tables, if tracking is enabled
         if self.stevdb_dict.get("track_initials"):
-            if modelSummary.insert_in_database:
+            if not modelSummary.have_initial_data:
                 self.database.insert_record(
                     table_name=str(self.stevdb_dict.get("id_for_initials_in_database")),
                     table_data_dict=modelSummary.Initials,
                 )
-            else:
+            elif self.replace_models:
                 self.database.update_record(
                     table_name=str(self.stevdb_dict.get("id_for_initials_in_database")),
                     table_data_dict=modelSummary.Initials,
@@ -298,31 +316,50 @@ class MESAbinaryGrid:
 
         # track XRB phase conditions, save to database
         if self.stevdb_dict.get("track_xrb_phase"):
-            if modelSummary.insert_in_database:
-                self.database.insert_record(
-                    table_name=str(self.stevdb_dict.get("id_for_xrb_phase_in_database")),
-                    table_data_dict=modelSummary.XRB,
-                )
-            else:
-                self.database.update_record(
-                    table_name=str(self.stevdb_dict.get("id_for_xrb_phase_in_database")),
-                    table_data_dict=modelSummary.XRB,
-                    model_id=modelSummary.model_id,
-                )
+            # the outputted dictionary with XRB phase properties are arrays
+            # so first check the length of any of them
+            add_record = True
+            for value in modelSummary.XRB.values():
+                if isinstance(value, np.ndarray):
+                    if len(value) <= 0:
+                        add_record = False
+                        break
+
+            if add_record:
+                if not modelSummary.have_xrb_data:
+                    self.database.insert_record(
+                        table_name=str(self.stevdb_dict.get("id_for_xrb_phase_in_database")),
+                        table_data_dict=modelSummary.XRB,
+                    )
+                elif self.replace_models:
+                    self.database.update_record(
+                        table_name=str(self.stevdb_dict.get("id_for_xrb_phase_in_database")),
+                        table_data_dict=modelSummary.XRB,
+                        model_id=modelSummary.model_id,
+                    )
 
         # tracking final condition, save to database
         if self.stevdb_dict.get("track_finals"):
-            if modelSummary.insert_in_database:
-                self.database.insert_record(
-                    table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
-                    table_data_dict=modelSummary.Finals,
-                )
-            else:
-                self.database.update_record(
-                    table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
-                    table_data_dict=modelSummary.Finals,
-                    model_id=modelSummary.model_id,
-                )
+            # there could be cases where the final conditions have None values
+            # those should not be added
+            add_record = True
+            for value in modelSummary.Finals.values():
+                if value is None:
+                    add_record = False
+                    break
+
+            if add_record:
+                if not modelSummary.have_final_data:
+                    self.database.insert_record(
+                        table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
+                        table_data_dict=modelSummary.Finals,
+                    )
+                elif self.replace_models:
+                    self.database.update_record(
+                        table_name=str(self.stevdb_dict.get("id_for_finals_in_database")),
+                        table_data_dict=modelSummary.Finals,
+                        model_id=modelSummary.model_id,
+                    )
 
         # change status from STEVMA table
         self.database.update_model_status(
