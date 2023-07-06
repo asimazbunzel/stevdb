@@ -5,6 +5,7 @@ from typing import Any, Dict, Union
 
 import os
 import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +15,8 @@ from stevdb.io import logger
 from .defaults import get_mesa_defaults
 from .mesa import MESAdata
 from .utils import LX_CUT, MAX_NS_MASS, R_NS, Lsun, Msun, secyer, standard_cgrav
+
+warnings.filterwarnings("ignore")
 
 
 class NoMESAmodel(Exception):
@@ -150,6 +153,11 @@ class MESAmodel:
         self._MESAbinaryHistory = None
         self._MESAstar1History = None
         self._MESAstar2History = None
+
+        # to handle addition into database
+        self.have_initial_data = False
+        self.have_xrb_data = False
+        self.have_final_data = False
 
         # actual load of MESA output
         self._load_MESA_output(kwargs)
