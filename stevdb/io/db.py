@@ -77,7 +77,10 @@ class Database:
         for element in table_data_dict.values():
             if isinstance(element, np.ndarray) or isinstance(element, list):
                 has_array_elements = True
-                n_elements = len(element)
+                try:
+                    n_elements = len(element)
+                except TypeError:
+                    has_array_elements = False
                 break
 
         # get column values
