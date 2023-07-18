@@ -469,7 +469,13 @@ class MESAmodel:
         # only compute accretion luminosity when accretor is a NS, using Belczynski formulae
         # for BHs we use Podsiadlowski one (already in MESA)
         m2 = self._MESAbinaryHistory.get("star_2_mass")
-        if m2[0] < MAX_NS_MASS:
+        ndim = m2.ndim
+        if ndim == 1:
+            m2_i = m2[0]
+        else:
+            m2_i = m2
+
+        if m2_i < MAX_NS_MASS:
             lg_dot_m2 = self._MESAbinaryHistory.get("lg_mstar_dot_2")
             lg_Lbol = compute_accretion_luminosity(macc=m2, dot_macc=lg_dot_m2)
         else:
